@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -10,11 +11,12 @@ import (
 )
 
 
-var upgrader = websocket.Upgrader{
+var (upgrader = websocket.Upgrader{
 	ReadBufferSize: 1024,
 	WriteBufferSize: 1024,
 }
-
+repo *RedisMessageRepository
+)
 func handler(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -22,10 +24,17 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	for {
-		messageType, p, err := conn.ReadMessage()
+		_, p, err := conn.ReadMessage()
 		if err != nil {
 			return
 		}
+		var msg Message
+		err = json.Unmarshal(p, &msg)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+		repo.Create(&msg)
 		if err := conn.WriteMessage(messageType, p); err != nil {
 			return
 		}
@@ -38,8 +47,11 @@ func main() {
 		Password: "", // no password set
 		DB:       0,  // use default DB
 	})
+
+	repo = NewRedisMessageRepository(rdb)
 	port := 8080
 	log.Default().Println("Server started on port", port)
 	http.HandleFunc("/ws", handler)
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", port), nil))
 }
+
