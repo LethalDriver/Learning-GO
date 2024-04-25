@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/go-redis/redis"
 	"github.com/gorilla/websocket"
 )
 
@@ -32,6 +33,11 @@ func handler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	rdb := redis.NewClient(&redis.Options{
+		Addr:     "localhost:6379",
+		Password: "", // no password set
+		DB:       0,  // use default DB
+	})
 	port := 8080
 	log.Default().Println("Server started on port", port)
 	http.HandleFunc("/ws", handler)
