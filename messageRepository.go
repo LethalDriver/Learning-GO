@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
 
 	"github.com/go-redis/redis"
 )
@@ -23,7 +25,7 @@ type RedisMessageRepository struct {
 }
 
 func NewRedisMessageRepository(redisClient *redis.Client) *RedisMessageRepository {
-	return &RedisMessageRepository{redisCleint: redisClient}
+	return &RedisMessageRepository{redisClient: redisClient}
 }
 
 func (r *RedisMessageRepository) FindAll() ([]*Message, error) {
@@ -33,7 +35,8 @@ func (r *RedisMessageRepository) FindAll() ([]*Message, error) {
 		return nil, err
 	}
 	for _, key := range keys {
-		message, err := r.FindById(key)
+		id, _ := strconv.Atoi(strings.TrimPrefix(key, "message:"))
+		message, err := r.FindById(id)
 		if err != nil {
 			return nil, err
 		}
