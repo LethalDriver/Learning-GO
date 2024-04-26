@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-redis/redis"
 	"github.com/gorilla/websocket"
+	"github.com/gorilla/mux"
 )
 
 
@@ -24,7 +25,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	for {
-		_, p, err := conn.ReadMessage()
+		_, message, err := conn.ReadMessage()
 		if err != nil {
 			return
 		}
@@ -41,7 +42,19 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func handleMessage(message []byte) {
+	var msg Message
+	err := json.Unmarshal(message, &msg)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	repo.Create(&msg)
+}
+
 func main() {
+	r := mux.NewRouter()
+
 	rdb := redis.NewClient(&redis.Options{
 		Addr:     "localhost:6379",
 		Password: "", // no password set
@@ -50,8 +63,19 @@ func main() {
 
 	repo = NewRedisMessageRepository(rdb)
 	port := 8080
+	r.HandleFunc("/ws", handler)
+	http.ListenAndServe(":8080", r)
 	log.Default().Println("Server started on port", port)
-	http.HandleFunc("/ws", handler)
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", port), nil))
+}
+
+func handleCreateRoom(w http.ResponseWriter, r *http.Request) {
+	var room Room
+	err := json.NewDecoder(r.Body).Decode(&room)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	repo.CreateRoom(&room)
+	w.WriteHeader(http.StatusCreated)
 }
 
