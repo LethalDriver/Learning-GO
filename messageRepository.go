@@ -10,12 +10,6 @@ import (
 	"github.com/go-redis/redis"
 )
 
-type Message struct {
-	Id        int    `json:"id"`
-	Content   string `json:"content"`
-	ChannelId int    `json:"channelId"`
-}
-
 type MessageRepository interface {
 	FindAll() ([]*Message, error)
 	FindById(id int) (*Message, error)
