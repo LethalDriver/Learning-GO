@@ -1,7 +1,9 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
 
@@ -55,5 +57,11 @@ func (r *RedisMessageRepository) FindById(id int) (*Message, error) {
 }
 
 func (r *RedisMessageRepository) Create(message *Message) error {
-	return r.redisClient.Set(fmt.Sprintf("message:%d", message.Id), message, 0).Err()
+	msgJson, err := json.Marshal(message)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+
+	return r.redisClient.Set(fmt.Sprintf("message:%d", message.Id), msgJson, 0).Err()
 }

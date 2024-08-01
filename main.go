@@ -34,9 +34,15 @@ func handler(w http.ResponseWriter, r *http.Request) {
 			log.Println(err)
 			return
 		}
-		repo.Create(&msg)
+		err = repo.Create(&msg)
+		if err != nil {
+			log.Println(err)
+		}
+		messageType := websocket.TextMessage
 		if err := conn.WriteMessage(messageType, p); err != nil {
 			return
+		} else {
+			log.Printf("Message content: %s", msg.Content)
 		}
 	}
 }
