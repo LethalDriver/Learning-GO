@@ -18,15 +18,16 @@ func main() {
 	r := mux.NewRouter()
 	m := NewRoomManager()
 	port := 8080
-	http.HandleFunc("/ws/{room_id}", func(w http.ResponseWriter, req *http.Request) {
+	r.HandleFunc("/ws/{room_id}", func(w http.ResponseWriter, req *http.Request) {
 		ws, err := upgrader.Upgrade(w, req, nil)
 		if err != nil {
+			log.Println("Error upgrading connection")
 			return
 		}
 		handleConnection(ws, m, req)
 	})
-	http.ListenAndServe(":8080", r)
 	log.Default().Println("Server started on port", port)
+	log.Fatal(http.ListenAndServe(":8080", r))
 }
 
 
@@ -49,7 +50,7 @@ func handleConnection(ws *websocket.Conn, m *RoomManager, req *http.Request) {
 	}()
 
 	go conn.writePump()
-	go conn.readPump()
+	conn.readPump()
 }
 
 
