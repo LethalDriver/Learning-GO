@@ -19,7 +19,7 @@ func main() {
 	m := NewRoomManager()
 	port := 8080
 	http.HandleFunc("/ws/{room_id}", func(w http.ResponseWriter, req *http.Request) {
-		ws, err := upgrader.Upgrade(w, r, nil)
+		ws, err := upgrader.Upgrade(w, req, nil)
 		if err != nil {
 			return
 		}
@@ -36,13 +36,20 @@ func handleConnection(ws *websocket.Conn, m *RoomManager, req *http.Request) {
 
 	room := m.GetOrCreateRoom(roomId)
 
-	connection := &Connection{
+	conn := &Connection{
 		ws: ws,
 		send: make(chan []byte, 256),
 		room: room,
 	}
 
-	room.Register <- connection
+	room.Register <- conn
+
+	defer func() {
+		room.Unregister <- conn
+	}()
+
+	go conn.writePump()
+	go conn.readPump()
 }
 
 
