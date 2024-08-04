@@ -41,10 +41,3 @@ func (c *Connection) writePump() {
 	}
 }
 
-
-func NewConnection(ws *websocket.Conn) *Connection {
-    return &Connection{
-        ws:   ws,
-        send: make(chan []byte, 256),
-    }
-}
