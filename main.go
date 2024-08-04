@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"sync"
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
@@ -45,12 +46,22 @@ func handleConnection(ws *websocket.Conn, m *RoomManager, req *http.Request) {
 
 	room.Register <- conn
 
-	defer func() {
-		room.Unregister <- conn
+	var wg sync.WaitGroup
+	wg.Add(2) 
+
+	go func() {
+		defer wg.Done() 
+		conn.writePump()
 	}()
 
-	go conn.writePump()
-	conn.readPump()
+	go func() {
+		defer wg.Done() 
+		conn.readPump()
+	}()
+
+	wg.Wait()
+
+	room.Unregister <- conn
 }
 
 
