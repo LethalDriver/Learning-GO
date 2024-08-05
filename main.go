@@ -26,6 +26,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer client.Disconnect(context.TODO())
 
 	err = client.Ping(context.TODO(), nil)
 	if err != nil {
