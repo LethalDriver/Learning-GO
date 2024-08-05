@@ -15,8 +15,8 @@ type MessageEntity struct {
 	ChatRoomId string `bson:"chatRoomId" json:"chatRoomId"`
 }
 
-func NewMessageEntity(content string, chatRoomId string) MessageEntity {
-	return MessageEntity{
+func NewMessageEntity(content string, chatRoomId string) *MessageEntity {
+	return &MessageEntity{
 		Id:       uuid.New().String(),
 		Content:  content,
 		ChatRoomId: chatRoomId,
