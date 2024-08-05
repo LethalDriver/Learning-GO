@@ -1,14 +1,14 @@
 package main
 
-type ChatRoom struct {
-	ID         string
+type ChatRoomWebsocket struct {
+	Id         string
 	Members    map[*Connection]bool
 	Broadcast  chan []byte
 	Register   chan *Connection
 	Unregister chan *Connection
 }
 
-func (room *ChatRoom) Run() {
+func (room *ChatRoomWebsocket) Run(repo ChatRoomRepository) {
 	for {
 		select {
 		case conn := <-room.Register:
@@ -27,6 +27,7 @@ func (room *ChatRoom) Run() {
 					delete(room.Members, conn)
 				}
 			}
+			repo.AddMessageToRoom(room.Id, string(message))
 		}
 	}
 }

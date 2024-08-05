@@ -9,7 +9,7 @@ import (
 type Connection struct {
     ws   *websocket.Conn
     send chan []byte
-	room *ChatRoom
+	room *ChatRoomWebsocket
 }
 
 func (c *Connection) readPump() {
