@@ -9,10 +9,9 @@ import (
 
 
 type ChatRoomRepository interface {
-	CreateRoom(id string) (ChatRoomEntity, error)
-	GetRoom(id string) (ChatRoomEntity, error)
+	CreateRoom(id string) (*ChatRoomEntity, error)
+	GetRoom(id string) (*ChatRoomEntity, error)
 	DeleteRoom(id string) error
-	RoomExists(id string) (bool, error)
 	AddMessageToRoom(roomId string, content string) error
 }
 
@@ -20,12 +19,16 @@ type MongoChatRoomRepository struct {
 	collection *mongo.Collection
 }
 
+func (repo *MongoChatRoomRepository) GetCollection() *mongo.Collection {
+	return repo.collection
+}
+
 func NewMongoChatRoomRepository(client *mongo.Client, dbName, collectionName string) *MongoChatRoomRepository {
 	collection := client.Database(dbName).Collection(collectionName)
 	return &MongoChatRoomRepository{collection: collection}
 }
 
-func (repo *MongoChatRoomRepository) CreateRoom(id string) (ChatRoomEntity, error) {
+func (repo *MongoChatRoomRepository) CreateRoom(id string) (*ChatRoomEntity, error) {
 	newRoom := &ChatRoomEntity{
 		Id: id,
 		Messages: []MessageEntity{},
@@ -33,38 +36,19 @@ func (repo *MongoChatRoomRepository) CreateRoom(id string) (ChatRoomEntity, erro
 
 	_, err := repo.collection.InsertOne(context.TODO(), newRoom)
 	if err != nil {
-		return ChatRoomEntity{}, err
+		return nil, err
 	}
-	return *newRoom, nil
+	return newRoom, nil
 }
 
-func (repo *MongoChatRoomRepository) GetRoom(id string) (ChatRoomEntity, error) {
-	var room ChatRoomEntity
-	filter := bson.D{{Key: "id", Value: id}}
-	err := repo.collection.FindOne(context.TODO(), filter).Decode(&room)
-	if err != nil {
-		return ChatRoomEntity{}, err
-	}
-	return room, nil
+func (repo *MongoChatRoomRepository) GetRoom(id string) (*ChatRoomEntity, error) {
+	return GetByKey[ChatRoomEntity, string]("id", id, repo)
 }
 
 func (repo *MongoChatRoomRepository) DeleteRoom(id string) error {
 	filter := bson.D{{Key: "id", Value: id}}
 	_, err := repo.collection.DeleteOne(context.TODO(), filter)
 	return err
-}
-
-func (repo *MongoChatRoomRepository) RoomExists(id string) (bool, error) {
-	filter := bson.M{"id": id}
-	var result ChatRoomWebsocket
-	err := repo.collection.FindOne(context.TODO(), filter).Decode(&result)
-	if err != nil {
-		if err == mongo.ErrNoDocuments {
-			return false, nil 
-		}
-		return false, err
-	}
-	return true, nil
 }
 
 func (repo *MongoChatRoomRepository) AddMessageToRoom(roomId string, content string) error {
