@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -8,6 +10,7 @@ type UserRepository interface {
 	GetUserById(id string) (UserEntity, error)
 	GetUserByUsername(username string) (UserEntity, error)
 	RegisterUser(username string, password string)
+	Save(user *UserEntity) (*UserEntity, error)
 }
 
 type MongoUserRepository struct {
@@ -31,3 +34,11 @@ func (repo *MongoUserRepository) GetUserById(id string) (*UserEntity, error) {
 func (repo *MongoUserRepository) GetByUsername(username string) (*UserEntity, error) {
 	return GetByKey[UserEntity, string]("username", username, repo)
 }
+
+ func (repo *MongoUserRepository) Save(user *UserEntity) error {
+	_, err := repo.collection.InsertOne(context.TODO(), user)
+	if err != nil {
+		return err
+	}
+	return nil
+ }
