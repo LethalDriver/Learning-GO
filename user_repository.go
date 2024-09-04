@@ -10,7 +10,7 @@ type UserRepository interface {
 	GetUserById(id string) (UserEntity, error)
 	GetUserByUsername(username string) (UserEntity, error)
 	RegisterUser(username string, password string)
-	Save(user *UserEntity) (*UserEntity, error)
+	Save(user *UserEntity) error
 }
 
 type MongoUserRepository struct {

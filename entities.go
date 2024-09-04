@@ -1,10 +1,7 @@
 package main
 
 import (
-	"log"
-
 	"github.com/google/uuid"
-	"golang.org/x/crypto/bcrypt"
 )
 
 type Entity interface {
@@ -39,16 +36,11 @@ func NewMessageEntity(content string, chatRoomId string) *MessageEntity {
 }
 
 func NewUserEntity(username string, email string, password string) *UserEntity {
-    hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-    if err != nil {
-        log.Fatal(err)
-    }
-
     return &UserEntity{
         Id:       uuid.New().String(),
         Username: username,
         Email:    email,
-        Password: string(hashedPassword),
+        Password: password,
     }
 }
 
