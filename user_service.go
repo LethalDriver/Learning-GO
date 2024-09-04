@@ -1,6 +1,9 @@
 package main
 
 import (
+	"errors"
+
+	"go.mongodb.org/mongo-driver/mongo"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -19,6 +22,10 @@ func (s *UserService) RegisterUser(r RegistrationRequest) error {
 	err := s.validateRegistrationRequest(r)
 	if err != nil {
 		return err
+	}
+	exists := s.checkIfUserExists(r.Username)
+	if exists {
+		return errors.New("user already exists")
 	}
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(r.Password), bcrypt.DefaultCost)
 	if err != nil {
@@ -46,4 +53,9 @@ func (s *UserService) validateRegistrationRequest(r RegistrationRequest) error {
 		return err
 	}
 	return nil
+}
+
+func (s *UserService) checkIfUserExists(username string) bool {
+	_, err := s.repo.GetUserByUsername(username)
+	return err != mongo.ErrNoDocuments
 }
