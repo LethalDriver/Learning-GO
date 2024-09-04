@@ -34,7 +34,7 @@ func NewJwtService() (*JwtService, error) {
 	// Parse the expiration time from string to integer
 	expirationTimeHs, err := strconv.Atoi(expirationTimeString)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to parse TOKEN_EXPIRATION_HS: %v", err)
+		return nil, fmt.Errorf("failed to parse TOKEN_EXPIRATION_HS: %v", err)
 	}
 
 	// Get the RSA private key
