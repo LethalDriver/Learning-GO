@@ -99,7 +99,7 @@ func getRsaPrivateKey() (*rsa.PrivateKey, error) {
 
 	privateKey, err := jwt.ParseRSAPrivateKeyFromPEM([]byte(privateKeyPEM))
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse RSA private key:", err)
+		return nil, fmt.Errorf("failed to parse RSA private key: %v", err)
 	}
 	return privateKey, nil
 }
