@@ -7,17 +7,22 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+type Entity interface {
+	GetId() string
+}
+
 type UserEntity struct {
 	Id string `bson:"id" json:"id"`
 	Username string `bson:"username" json:"username"`
 	Email string `bson:"email" json:"email"`
-	Password string `bson: "password" json:"password"`
+	Password string `bson:"password" json:"password"`
 }
 
 type ChatRoomEntity struct {
 	Id       string          `bson:"id" json:"id"`
 	Messages []MessageEntity `bson:"messages" json:"messages"`
 }
+
 
 type MessageEntity struct {
 	Id       string         `bson:"id" json:"id"`
@@ -45,4 +50,14 @@ func NewUserEntity(username string, email string, password string) *UserEntity {
         Email:    email,
         Password: string(hashedPassword),
     }
+}
+
+func (user UserEntity) GetId() string {
+	return user.Id
+}
+func (message MessageEntity) GetId() string {
+	return message.Id
+}
+func (chat ChatRoomEntity) GetId() string {
+	return chat.Id
 }

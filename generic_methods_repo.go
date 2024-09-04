@@ -18,7 +18,7 @@ type Comparable interface {
 }
 
 // GetByKey filters the collection by the given key and returns the result.
-func GetByKey[T any, V Comparable](key string, value V, repo Repository) (*T, error) {
+func GetByKey[T Entity, V Comparable](key string, value V, repo Repository) (*T, error) {
     var entity T
     filter := bson.D{{Key: key, Value: value}}
     err := repo.GetCollection().FindOne(context.TODO(), filter).Decode(&entity)
