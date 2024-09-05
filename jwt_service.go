@@ -74,6 +74,35 @@ func (s *JwtService) GenerateToken(userId string, username string) (string, erro
 	return tokenString, nil
 }
 
+func validateToken(tokenString string) error {
+    // Load the RSA public key
+    publicKey, err := getRsaPublicKey()
+    if err != nil {
+        return fmt.Errorf("failed to get RSA public key: %v", err)
+    }
+
+    // Parse and verify the token
+    token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+        // Ensure the token's signing method is RSA
+        if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
+            return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+        }
+        return publicKey, nil
+    })
+
+    if err != nil {
+        return fmt.Errorf("failed to parse token: %v", err)
+    }
+
+    // Check if the token is valid
+    if !token.Valid {
+        return errors.New("invalid token")
+    }
+
+    return nil
+}
+
+
 // getRsaPublicKey reads the RSA public key from the environment variable.
 // It parses the RSA public key and returns the parsed public key.
 func getRsaPublicKey() (*rsa.PublicKey, error) {
