@@ -74,7 +74,7 @@ func (s *JwtService) GenerateToken(userId string, username string) (string, erro
 	return tokenString, nil
 }
 
-func validateToken(tokenString string) error {
+func ValidateToken(tokenString string) error {
     // Load the RSA public key
     publicKey, err := getRsaPublicKey()
     if err != nil {
