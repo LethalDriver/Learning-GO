@@ -55,13 +55,7 @@ func (m *InMemoryRoomManager) GetOrCreateRoom(roomId string, conn *Connection) (
 
     // Create a new room and register the connection
     log.Printf("Creating new room with roomId: %s", roomId)
-    newRoom := &ChatRoom{
-        Id:         roomId,
-        Members:    make(map[*Connection]bool),
-        Broadcast:  make(chan []byte),
-        Register:   make(chan *Connection),
-        Unregister: make(chan *Connection),
-    }
+    newRoom := NewChatRoom(roomId, m.repo)
     m.rooms[roomId] = newRoom
 
     // Register new connection to the room and pump messages existing in the repository to the broadcast channel of the room
