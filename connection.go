@@ -18,14 +18,13 @@ func (c *Connection) readPump() {
         c.ws.Close() // Close the WebSocket connection
     }()
 
-    log.Println("Starting readPump")
     for {
         _, message, err := c.ws.ReadMessage()
         if err != nil {
             log.Printf("Error reading message in readPump: %v", err)
             break
         }
-        log.Printf("Read message from connection: %s", string(message))
+        log.Printf("Read message from connection: %q, address: %p", string(message), c)
         c.room.Broadcast <- message
     }
     log.Println("Exiting readPump")
@@ -38,13 +37,12 @@ func (c *Connection) writePump() {
         c.ws.Close()
     }()
 
-    log.Println("Starting writePump")
     for message := range c.send {
         if err := c.ws.WriteMessage(websocket.TextMessage, message); err != nil {
             log.Printf("Error writing message in writePump: %v", err)
             break
         }
-        log.Printf("Wrote message to connection: %s", string(message))
+        log.Printf("Wrote message to connection: %q, address: %p", string(message), c)
     }
     log.Println("Exiting writePump")
 }

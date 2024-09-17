@@ -60,7 +60,6 @@ func handleConnection(ws *websocket.Conn, m RoomManager, roomId string) error {
         return fmt.Errorf("error creating room: %v", err)
     }
     conn.room = room
-    log.Printf("Connection registered to room ID: %s", roomId)
 
     var wg sync.WaitGroup
     wg.Add(2)

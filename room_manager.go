@@ -26,7 +26,6 @@ func NewRoomManager(repo ChatRoomRepository) *InMemoryRoomManager {
 }
 
 func (m *InMemoryRoomManager) GetOrCreateRoom(roomId string, conn *Connection) (*ChatRoom, error) {
-    log.Printf("GetOrCreateRoom called with roomId: %s", roomId)
     m.lock.Lock()
     defer m.lock.Unlock()
 
@@ -46,6 +45,7 @@ func (m *InMemoryRoomManager) GetOrCreateRoom(roomId string, conn *Connection) (
 
     if room, exists := m.rooms[roomId]; exists {
         log.Printf("Room: %s exists, registering connection", roomId)
+		room.Register <- conn
         for _, message := range roomEntity.Messages {
             log.Printf("Sending existing message to connection: %s", message.Content)
             conn.send <- []byte(message.Content)
@@ -65,10 +65,8 @@ func (m *InMemoryRoomManager) GetOrCreateRoom(roomId string, conn *Connection) (
     m.rooms[roomId] = newRoom
 
     // Register new connection to the room and pump messages existing in the repository to the broadcast channel of the room
-    log.Printf("Registering new connection to room: %s", roomId)
 	go newRoom.Run(m.repo)
     newRoom.Register <- conn
-	log.Printf("Wrote to register channel")
 	go func() {
 		for _, message := range roomEntity.Messages {
 			log.Printf("Broadcasting existing message to room: %s", message.Content)

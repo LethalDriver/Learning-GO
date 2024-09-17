@@ -11,11 +11,10 @@ type ChatRoom struct {
 }
 
 func (r *ChatRoom) Run(repo ChatRoomRepository) {
-    log.Printf("Room %s is running", r.Id)
     for {
         select {
         case conn := <-r.Register:
-            log.Printf("Registering connection to room %s", r.Id)
+            log.Printf("Registering connection to room %s, address: %p", r.Id, conn)
             r.Members[conn] = true
         case conn := <-r.Unregister:
             log.Printf("Unregistering connection from room %s", r.Id)
@@ -26,6 +25,7 @@ func (r *ChatRoom) Run(repo ChatRoomRepository) {
         case message := <-r.Broadcast:
             log.Printf("Broadcasting message to room %s: %s", r.Id, string(message))
             for conn := range r.Members {
+				log.Printf("Sending message to write pump of connection %p", conn)
                 select {
                 case conn.send <- message:
                 default:
