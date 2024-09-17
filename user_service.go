@@ -18,6 +18,12 @@ type RegistrationRequest struct {
 	Password string
 }
 
+func NewUserService(repo UserRepository) *UserService {
+	return &UserService{
+		repo: repo,
+	}
+}
+
 func (s *UserService) RegisterUser(r RegistrationRequest) error {
 	err := s.validateRegistrationRequest(r)
 	if err != nil {
@@ -56,6 +62,6 @@ func (s *UserService) validateRegistrationRequest(r RegistrationRequest) error {
 }
 
 func (s *UserService) checkIfUserExists(username string) bool {
-	_, err := s.repo.GetUserByUsername(username)
+	_, err := s.repo.GetByUsername(username)
 	return err != mongo.ErrNoDocuments
 }

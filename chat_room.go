@@ -1,6 +1,8 @@
 package main
 
-type ChatRoomWebsocket struct {
+import "log"
+
+type ChatRoom struct {
 	Id         string
 	Members    map[*Connection]bool
 	Broadcast  chan []byte
@@ -8,26 +10,29 @@ type ChatRoomWebsocket struct {
 	Unregister chan *Connection
 }
 
-func (room *ChatRoomWebsocket) Run(repo ChatRoomRepository) {
-	for {
-		select {
-		case conn := <-room.Register:
-			room.Members[conn] = true
-		case conn := <-room.Unregister:
-			if _, ok := room.Members[conn]; ok {
-				delete(room.Members, conn)
-				close(conn.send)
-			}
-		case message := <-room.Broadcast:
-			for conn := range room.Members {
-				select {
-				case conn.send <- message:
-				default:
-					close(conn.send)
-					delete(room.Members, conn)
-				}
-			}
-			repo.AddMessageToRoom(room.Id, string(message))
-		}
-	}
+func (r *ChatRoom) Run(repo ChatRoomRepository) {
+    log.Printf("Room %s is running", r.Id)
+    for {
+        select {
+        case conn := <-r.Register:
+            log.Printf("Registering connection to room %s", r.Id)
+            r.Members[conn] = true
+        case conn := <-r.Unregister:
+            log.Printf("Unregistering connection from room %s", r.Id)
+            if _, ok := r.Members[conn]; ok {
+                delete(r.Members, conn)
+                close(conn.send)
+            }
+        case message := <-r.Broadcast:
+            log.Printf("Broadcasting message to room %s: %s", r.Id, string(message))
+            for conn := range r.Members {
+                select {
+                case conn.send <- message:
+                default:
+                    close(conn.send)
+                    delete(r.Members, conn)
+                }
+            }
+        }
+    }
 }

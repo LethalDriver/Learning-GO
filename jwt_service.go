@@ -5,8 +5,10 @@ import (
 	"crypto/rsa"
 	"errors"
 	"fmt"
+	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -74,7 +76,7 @@ func (s *JwtService) GenerateToken(userId string, username string) (string, erro
 	return tokenString, nil
 }
 
-func ValidateToken(tokenString string) error {
+func (s *JwtService) ValidateToken(tokenString string) error {
     // Load the RSA public key
     publicKey, err := getRsaPublicKey()
     if err != nil {
@@ -131,6 +133,34 @@ func getRsaPrivateKey() (*rsa.PrivateKey, error) {
 		return nil, fmt.Errorf("failed to parse RSA private key: %v", err)
 	}
 	return privateKey, nil
+}
+
+// AuthMiddleware is the authorization middleware
+func AuthMiddleware(jwtService *JwtService, next http.Handler) http.Handler {
+    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        authHeader := r.Header.Get("Authorization")
+        if authHeader == "" {
+            http.Error(w, "Authorization header missing", http.StatusUnauthorized)
+            return
+        }
+
+        // Extract the token from the "Bearer <token>" format
+        tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+        if tokenString == authHeader {
+            http.Error(w, "Invalid authorization header format", http.StatusUnauthorized)
+            return
+        }
+
+        // Validate the token
+        err := jwtService.ValidateToken(tokenString)
+        if err != nil {
+            http.Error(w, "Invalid token: "+err.Error(), http.StatusUnauthorized)
+            return
+        }
+
+        // Call the next handler
+        next.ServeHTTP(w, r)
+    })
 }
 
 
