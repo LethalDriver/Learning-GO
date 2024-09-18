@@ -1,10 +1,11 @@
-package main
+package room
 
 import (
 	"fmt"
 	"log"
 	"sync"
 
+	"example.com/myproject/repository"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -15,10 +16,10 @@ type RoomManager interface {
 type InMemoryRoomManager struct {
 	rooms map[string]*ChatRoom
 	lock sync.Mutex
-	repo ChatRoomRepository
+	repo repository.ChatRoomRepository
 }
 
-func NewRoomManager(repo ChatRoomRepository) *InMemoryRoomManager {
+func NewRoomManager(repo repository.ChatRoomRepository) *InMemoryRoomManager {
 	return &InMemoryRoomManager{
 		rooms: make(map[string]*ChatRoom),
 		repo: repo,

@@ -1,5 +1,4 @@
-// Package main provides a JWT service implementation.
-package main
+package service
 
 import (
 	"crypto/rsa"

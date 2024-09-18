@@ -1,17 +1,19 @@
-package main
+package handler
 
 import (
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+
+	"example.com/myproject/service"
 )
 
 type UserHandler struct {
-	s *UserService
+	s *service.UserService
 }
 
-func NewUserHandler(s *UserService) *UserHandler {
+func NewUserHandler(s *service.UserService) *UserHandler {
 	return &UserHandler{
 		s: s,
 	}
@@ -24,7 +26,7 @@ func (h *UserHandler) HandleRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var regReq RegistrationRequest
+	var regReq service.RegistrationRequest
     err = json.Unmarshal(bodyBytes, &regReq)
     if err != nil {
         http.Error(w, err.Error(), http.StatusBadRequest)

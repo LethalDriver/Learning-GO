@@ -1,7 +1,4 @@
-
-// Package main provides a Validator interface and its implementation for validating email, username, and password.
-
-package main
+package service
 
 import (
 	"errors"

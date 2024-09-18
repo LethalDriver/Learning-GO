@@ -1,15 +1,16 @@
-package main
+package repository
 
 import (
 	"context"
 
+	"example.com/myproject/entity"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type UserRepository interface {
-	GetById(id string) (*UserEntity, error)
-	GetByUsername(username string) (*UserEntity, error)
-	Save(user *UserEntity) error
+	GetById(id string) (*entity.UserEntity, error)
+	GetByUsername(username string) (*entity.UserEntity, error)
+	Save(user *entity.UserEntity) error
 }
 
 type MongoUserRepository struct {
@@ -26,15 +27,15 @@ func NewMongoUserRepository(client *mongo.Client, dbName, collectionName string)
 	return &MongoUserRepository{collection: collection}
 }
 
-func (repo *MongoUserRepository) GetById(id string) (*UserEntity, error) {
-	return GetByKey[UserEntity, string]("id", id, repo)
+func (repo *MongoUserRepository) GetById(id string) (*entity.UserEntity, error) {
+	return GetByKey[entity.UserEntity, string]("id", id, repo)
 }
 
-func (repo *MongoUserRepository) GetByUsername(username string) (*UserEntity, error) {
-	return GetByKey[UserEntity, string]("username", username, repo)
+func (repo *MongoUserRepository) GetByUsername(username string) (*entity.UserEntity, error) {
+	return GetByKey[entity.UserEntity, string]("username", username, repo)
 }
 
- func (repo *MongoUserRepository) Save(user *UserEntity) error {
+ func (repo *MongoUserRepository) Save(user *entity.UserEntity) error {
 	_, err := repo.collection.InsertOne(context.TODO(), user)
 	if err != nil {
 		return err

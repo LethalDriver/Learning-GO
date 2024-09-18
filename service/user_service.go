@@ -1,27 +1,30 @@
-package main
+package service
 
 import (
 	"errors"
+
+	"example.com/myproject/entity"
+	"example.com/myproject/repository"
 
 	"go.mongodb.org/mongo-driver/mongo"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type UserService struct {
-	repo      UserRepository
+	repo      repository.UserRepository
 	validator Validator
+}
+
+func NewUserService(repo repository.UserRepository) *UserService {
+	return &UserService{
+		repo: repo,
+	}
 }
 
 type RegistrationRequest struct {
 	Username string
 	Email    string
 	Password string
-}
-
-func NewUserService(repo UserRepository) *UserService {
-	return &UserService{
-		repo: repo,
-	}
 }
 
 func (s *UserService) RegisterUser(r RegistrationRequest) error {
@@ -37,7 +40,7 @@ func (s *UserService) RegisterUser(r RegistrationRequest) error {
 	if err != nil {
 		return err
 	}
-	user := NewUserEntity(r.Username, r.Email, string(hashedPassword))
+	user := entity.NewUserEntity(r.Username, r.Email, string(hashedPassword))
 	err = s.repo.Save(user)
 	if err != nil {
 		return err

@@ -1,6 +1,10 @@
-package main
+package room
 
-import "log"
+import (
+	"log"
+
+	"example.com/myproject/repository"
+)
 
 type ChatRoom struct {
 	Id         string
@@ -8,10 +12,10 @@ type ChatRoom struct {
 	Broadcast  chan []byte
 	Register   chan *Connection
 	Unregister chan *Connection
-	repo ChatRoomRepository
+	repo repository.ChatRoomRepository
 }
 
-func NewChatRoom(roomId string, repo ChatRoomRepository) *ChatRoom {
+func NewChatRoom(roomId string, repo repository.ChatRoomRepository) *ChatRoom {
 	return &ChatRoom{
         Id:         roomId,
         Members:    make(map[*Connection]bool),
@@ -22,7 +26,7 @@ func NewChatRoom(roomId string, repo ChatRoomRepository) *ChatRoom {
     }
 }
 
-func (r *ChatRoom) Run(repo ChatRoomRepository) {
+func (r *ChatRoom) Run(repo repository.ChatRoomRepository) {
     for {
         select {
         case conn := <-r.Register:

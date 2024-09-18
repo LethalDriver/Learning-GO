@@ -1,7 +1,9 @@
-package main
+package room
 
 import (
+	"fmt"
 	"log"
+	"sync"
 
 	"github.com/gorilla/websocket"
 )
@@ -10,6 +12,39 @@ type Connection struct {
     ws   *websocket.Conn
     send chan []byte
     room *ChatRoom
+}
+
+func HandleConnection(ws *websocket.Conn, m RoomManager, roomId string) error {
+    log.Println("Handling connection")
+    conn := &Connection{
+        ws:   ws,
+        send: make(chan []byte, 256),
+    }
+
+    room, err := m.GetOrCreateRoom(roomId, conn)
+    if err != nil {
+        return fmt.Errorf("error creating room: %v", err)
+    }
+    conn.room = room
+
+    var wg sync.WaitGroup
+    wg.Add(2)
+
+    go func() {
+        defer wg.Done()
+        conn.writePump()
+    }()
+
+    go func() {
+        defer wg.Done()
+        conn.readPump()
+    }()
+
+    wg.Wait()
+    room.Unregister <- conn
+    log.Printf("Connection unregistered from room ID: %s", roomId)
+
+    return nil
 }
 
 func (c *Connection) readPump() {

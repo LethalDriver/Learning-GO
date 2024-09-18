@@ -1,16 +1,17 @@
-package main
+package repository
 
 import (
 	"context"
 
+	"example.com/myproject/entity"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
 
 type ChatRoomRepository interface {
-	CreateRoom(id string) (*ChatRoomEntity, error)
-	GetRoom(id string) (*ChatRoomEntity, error)
+	CreateRoom(id string) (*entity.ChatRoomEntity, error)
+	GetRoom(id string) (*entity.ChatRoomEntity, error)
 	DeleteRoom(id string) error
 	AddMessageToRoom(roomId string, content string) error
 }
@@ -28,10 +29,10 @@ func NewMongoChatRoomRepository(client *mongo.Client, dbName, collectionName str
 	return &MongoChatRoomRepository{collection: collection}
 }
 
-func (repo *MongoChatRoomRepository) CreateRoom(id string) (*ChatRoomEntity, error) {
-	newRoom := &ChatRoomEntity{
+func (repo *MongoChatRoomRepository) CreateRoom(id string) (*entity.ChatRoomEntity, error) {
+	newRoom := &entity.ChatRoomEntity{
 		Id: id,
-		Messages: []MessageEntity{},
+		Messages: []entity.MessageEntity{},
 	}
 
 	_, err := repo.collection.InsertOne(context.TODO(), newRoom)
@@ -41,8 +42,8 @@ func (repo *MongoChatRoomRepository) CreateRoom(id string) (*ChatRoomEntity, err
 	return newRoom, nil
 }
 
-func (repo *MongoChatRoomRepository) GetRoom(id string) (*ChatRoomEntity, error) {
-	return GetByKey[ChatRoomEntity, string]("id", id, repo)
+func (repo *MongoChatRoomRepository) GetRoom(id string) (*entity.ChatRoomEntity, error) {
+	return GetByKey[entity.ChatRoomEntity, string]("id", id, repo)
 }
 
 func (repo *MongoChatRoomRepository) DeleteRoom(id string) error {
@@ -52,7 +53,7 @@ func (repo *MongoChatRoomRepository) DeleteRoom(id string) error {
 }
 
 func (repo *MongoChatRoomRepository) AddMessageToRoom(roomId string, content string) error {
-	message := NewMessageEntity(content, roomId)
+	message := entity.NewMessageEntity(content, roomId)
 	filter := bson.M{"id": roomId}
 	update := bson.M{
 		"$push": bson.M{

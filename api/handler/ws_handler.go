@@ -1,20 +1,19 @@
-package main
+package handler
 
 import (
-	"fmt"
 	"log"
 	"net/http"
-	"sync"
 
+	"example.com/myproject/room"
 	"github.com/gorilla/websocket"
 )
 
 type WebsocketHandler struct {
     upgrader websocket.Upgrader
-    m RoomManager
+    m room.RoomManager
 }
 
-func NewWebsocketHandler(m RoomManager) *WebsocketHandler {
+func NewWebsocketHandler(m room.RoomManager) *WebsocketHandler {
     return &WebsocketHandler{
         m: m,
         upgrader: websocket.Upgrader{
@@ -27,7 +26,7 @@ func NewWebsocketHandler(m RoomManager) *WebsocketHandler {
     }
 }
 
-func (wsh *WebsocketHandler) handleWebSocketUpgradeRequest(w http.ResponseWriter, r *http.Request) {
+func (wsh *WebsocketHandler) HandleWebSocketUpgradeRequest(w http.ResponseWriter, r *http.Request) {
     roomId := r.PathValue("roomId")
     log.Printf("Upgrading HTTP connection to WebSocket for room ID: %s", roomId)
 
@@ -41,42 +40,10 @@ func (wsh *WebsocketHandler) handleWebSocketUpgradeRequest(w http.ResponseWriter
 
     // Handle the WebSocket connection
     go func() {
-        if err := handleConnection(conn, wsh.m, roomId); err != nil {
+        if err := room.HandleConnection(conn, wsh.m, roomId); err != nil {
             log.Println("Error handling WebSocket connection:", err)
             conn.Close()
         }
     }()
 }
 
-func handleConnection(ws *websocket.Conn, m RoomManager, roomId string) error {
-    log.Println("Handling connection")
-    conn := &Connection{
-        ws:   ws,
-        send: make(chan []byte, 256),
-    }
-
-    room, err := m.GetOrCreateRoom(roomId, conn)
-    if err != nil {
-        return fmt.Errorf("error creating room: %v", err)
-    }
-    conn.room = room
-
-    var wg sync.WaitGroup
-    wg.Add(2)
-
-    go func() {
-        defer wg.Done()
-        conn.writePump()
-    }()
-
-    go func() {
-        defer wg.Done()
-        conn.readPump()
-    }()
-
-    wg.Wait()
-    room.Unregister <- conn
-    log.Printf("Connection unregistered from room ID: %s", roomId)
-
-    return nil
-}
