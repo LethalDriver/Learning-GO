@@ -32,7 +32,7 @@ func main() {
 
 	jwtService, err := service.NewJwtService()
 	if err != nil {
-		log.Fatalf("Failed launching jwt sevice: %w", err)
+		log.Fatalf("Failed launching jwt sevice: %v", err)
 	}
 	userService := service.NewUserService(userRepo, jwtService)
 	roomManager := room.NewRoomManager(chatRoomRepo)
