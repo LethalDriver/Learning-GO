@@ -41,13 +41,13 @@ func NewJwtService() (*JwtService, error) {
 	// Get the RSA private key
 	privateKey, err := getRsaPrivateKey()
 	if err != nil {
-		return nil, fmt.Errorf("failed getting rsa private key from env variables: %v", err)
+		return nil, fmt.Errorf("failed getting rsa private key %v", err)
 	}
 
 	// Get the RSA public key
 	publicKey, err := getRsaPublicKey()
 	if err != nil {
-		return nil, fmt.Errorf("failed getting rsa public key from env variables: %v", err)
+		return nil, fmt.Errorf("failed getting rsa public key %v", err)
 	}
 
 	return &JwtService{
@@ -107,12 +107,12 @@ func (s *JwtService) ValidateToken(tokenString string) error {
 // getRsaPublicKey reads the RSA public key from the environment variable.
 // It parses the RSA public key and returns the parsed public key.
 func getRsaPublicKey() (*rsa.PublicKey, error) {
-	publicKeyPEM := os.Getenv("RSA_PUBLIC_KEY")
-	if publicKeyPEM == "" {
-		return nil, errors.New("RSA_PUBLIC_KEY env variable not set")
+	pemData, err := os.ReadFile("public_key.pem")
+	if err != nil {
+		return nil, fmt.Errorf("error reading rsa private key: %w", err)
 	}
 
-	publicKey, err := jwt.ParseRSAPublicKeyFromPEM([]byte(publicKeyPEM))
+	publicKey, err := jwt.ParseRSAPublicKeyFromPEM(pemData)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse RSA public key: %v", err)
 	}
@@ -122,12 +122,12 @@ func getRsaPublicKey() (*rsa.PublicKey, error) {
 // getRsaPrivateKey reads the RSA private key from the environment variable.
 // It parses the RSA private key and returns the parsed private key.
 func getRsaPrivateKey() (*rsa.PrivateKey, error) {
-	privateKeyPEM := os.Getenv("RSA_PRIVATE_KEY")
-	if privateKeyPEM == "" {
-		return nil, errors.New("RSA_PRIVATE_KEY env variable not set")
+	pemData, err := os.ReadFile("private_key.pem")
+	if err != nil {
+		return nil, fmt.Errorf("error reading rsa private key: %w", err)
 	}
 
-	privateKey, err := jwt.ParseRSAPrivateKeyFromPEM([]byte(privateKeyPEM))
+	privateKey, err := jwt.ParseRSAPrivateKeyFromPEM(pemData)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse RSA private key: %v", err)
 	}
