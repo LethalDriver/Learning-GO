@@ -40,25 +40,30 @@ type LoginRequest struct {
 	Password string `json:"password"`
 }
 
-func (s *UserService) RegisterUser(r RegistrationRequest) error {
+func (s *UserService) RegisterUser(r RegistrationRequest) (string, error) {
 	err := s.validateRegistrationRequest(r)
 	if err != nil {
-		return err
+		return "", fmt.Errorf("registration request invalid: %w", err)
 	}
 	exists := s.checkIfUserExists(r.Username)
 	if exists {
-		return ErrUserExists
+		return "", ErrUserExists
 	}
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(r.Password), bcrypt.DefaultCost)
 	if err != nil {
-		return err
+		return "", fmt.Errorf("failed hashing password: %w", err)
 	}
 	user := entity.NewUserEntity(r.Username, r.Email, string(hashedPassword))
 	err = s.repo.Save(user)
 	if err != nil {
-		return err
+		return "", fmt.Errorf("failed saving user %q to the database: %w", user.Username, err)
 	}
-	return nil
+
+	token, err := s.jwt.GenerateToken(user.Id, user.Username)
+	if err != nil {
+		return "", fmt.Errorf("failed generating jwt token: %w", err)
+	}
+	return token, nil
 }
 
 func (s *UserService) LoginUser(r LoginRequest) (string, error) {
