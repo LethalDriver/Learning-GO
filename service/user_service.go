@@ -19,7 +19,6 @@ var (
 
 type UserService struct {
 	repo      repository.UserRepository
-	validator Validator
 	jwt *JwtService
 }
 
@@ -85,15 +84,15 @@ func (s *UserService) LoginUser(r LoginRequest) (string, error) {
 }
 
 func (s *UserService) validateRegistrationRequest(r RegistrationRequest) error {
-	err := s.validator.ValidateEmail(r.Email)
+	err := ValidateEmail(r.Email)
 	if err != nil {
 		return err
 	}
-	err = s.validator.ValidateUsername(r.Username)
+	err = ValidateUsername(r.Username)
 	if err != nil {
 		return err
 	}
-	err = s.validator.ValidatePassword(r.Password)
+	err = ValidatePassword(r.Password)
 	if err != nil {
 		return err
 	}
