@@ -28,11 +28,11 @@ func NewMongoUserRepository(client *mongo.Client, dbName, collectionName string)
 }
 
 func (repo *MongoUserRepository) GetById(id string) (*entity.UserEntity, error) {
-	return GetByKey[entity.UserEntity, string]("id", id, repo)
+	return GetByKey[entity.UserEntity]("id", id, repo)
 }
 
 func (repo *MongoUserRepository) GetByUsername(username string) (*entity.UserEntity, error) {
-	return GetByKey[entity.UserEntity, string]("username", username, repo)
+	return GetByKey[entity.UserEntity]("username", username, repo)
 }
 
  func (repo *MongoUserRepository) Save(user *entity.UserEntity) error {

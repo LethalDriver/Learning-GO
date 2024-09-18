@@ -43,7 +43,7 @@ func (repo *MongoChatRoomRepository) CreateRoom(id string) (*entity.ChatRoomEnti
 }
 
 func (repo *MongoChatRoomRepository) GetRoom(id string) (*entity.ChatRoomEntity, error) {
-	return GetByKey[entity.ChatRoomEntity, string]("id", id, repo)
+	return GetByKey[entity.ChatRoomEntity]("id", id, repo)
 }
 
 func (repo *MongoChatRoomRepository) DeleteRoom(id string) error {
