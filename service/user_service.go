@@ -11,6 +11,12 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+var (
+	ErrNoUser = errors.New("user doesn't exist")
+	ErrWrongPassword = errors.New("incorrect password")
+	ErrUserExists = errors.New("user already exists")
+)
+
 type UserService struct {
 	repo      repository.UserRepository
 	validator Validator
@@ -42,8 +48,7 @@ func (s *UserService) RegisterUser(r RegistrationRequest) error {
 	}
 	exists := s.checkIfUserExists(r.Username)
 	if exists {
-		var UserExistsErr = errors.New("user already exists")
-		return UserExistsErr
+		return ErrUserExists
 	}
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(r.Password), bcrypt.DefaultCost)
 	if err != nil {
@@ -61,16 +66,14 @@ func (s *UserService) LoginUser(r LoginRequest) (string, error) {
 	user, err := s.repo.GetByUsername(r.Username)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			var NoUserErr = errors.New("username not found")
-			return "", NoUserErr
+			return "", ErrNoUser
 		}
 		return "", errors.New("unknown error while logging in")
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(r.Password))
 	if err != nil {
-		var InvalidPassErr = errors.New("invalid password")
-		return "", InvalidPassErr
+		return "", ErrWrongPassword
 	}
 
 	token, err := s.jwt.GenerateToken(user.Id, user.Username)

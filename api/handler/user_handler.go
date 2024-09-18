@@ -35,7 +35,7 @@ func (h *UserHandler) HandleRegister(w http.ResponseWriter, r *http.Request) {
 
 	err = h.s.RegisterUser(regReq)
 	if err != nil {
-		if err.Error() == "user already exists" {
+		if err == service.ErrUserExists {
 			http.Error(w, "User already exists", http.StatusConflict)
 			return
 		}
