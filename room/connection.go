@@ -11,16 +11,18 @@ import (
 
 type Connection struct {
     ws   *websocket.Conn
+    userId string
     send chan []byte
     room *ChatRoom
 }
 
-func HandleConnection(ws *websocket.Conn, m RoomManager, roomId string) error {
+func HandleConnection(ws *websocket.Conn, m RoomManager, roomId string, userId string) error {
     ctx := context.Background()
 
     log.Println("Handling connection")
     conn := &Connection{
         ws:   ws,
+        userId: userId,
         send: make(chan []byte, 256),
     }
 

@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"example.com/myproject/room"
+	"example.com/myproject/service"
 	"github.com/gorilla/websocket"
 )
 
@@ -30,6 +31,11 @@ func (wsh *WebsocketHandler) HandleWebSocketUpgradeRequest(w http.ResponseWriter
     roomId := r.PathValue("roomId")
     log.Printf("Upgrading HTTP connection to WebSocket for room ID: %s", roomId)
 
+    userId, err := service.GetUserIdFromContext(r.Context())
+    if err != nil {
+        w.WriteHeader(http.StatusInternalServerError)
+    }
+
     // Upgrade the HTTP connection to a WebSocket connection
     conn, err := wsh.upgrader.Upgrade(w, r, nil)
     if err != nil {
@@ -40,7 +46,7 @@ func (wsh *WebsocketHandler) HandleWebSocketUpgradeRequest(w http.ResponseWriter
 
     // Handle the WebSocket connection
     go func() {
-        if err := room.HandleConnection(conn, wsh.m, roomId); err != nil {
+        if err := room.HandleConnection(conn, wsh.m, roomId, userId); err != nil {
             log.Println("Error handling WebSocket connection:", err)
             conn.Close()
         }

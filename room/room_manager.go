@@ -46,10 +46,10 @@ func (m *InMemoryRoomManager) GetOrCreateRoom(ctx context.Context, roomId string
     }
 
     if room, exists := m.rooms[roomId]; exists {
-        log.Printf("Room: %s exists, registering connection", roomId)
+        log.Printf("Room: %s exists, registering connection for user: %s", roomId, conn.userId)
 		room.Register <- conn
         for _, message := range roomEntity.Messages {
-            log.Printf("Sending existing message to connection: %s", message.Content)
+            log.Printf("Sending existing messages to connection: %s", message.Content)
             conn.send <- []byte(message.Content)
         }
         return room, nil
@@ -62,6 +62,7 @@ func (m *InMemoryRoomManager) GetOrCreateRoom(ctx context.Context, roomId string
 
     // Register new connection to the room and pump messages existing in the repository to the broadcast channel of the room
 	go newRoom.Run(m.repo)
+    log.Printf("Registering connection for user %s", conn.userId)
     newRoom.Register <- conn
 	go func() {
 		for _, message := range roomEntity.Messages {
