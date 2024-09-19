@@ -14,6 +14,11 @@ type UserDetails struct {
 	Username string `json:"username"`
 }
 
+type SeenUpdate struct {
+	MessageId string `json:"messageId"`
+	SeenBy UserDetails `json:"seenBy"`
+}
+
 type Message struct {
 	Id     string      `json:"id"`
 	Type MessageType `json:"messageType"`
