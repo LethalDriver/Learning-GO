@@ -1,6 +1,7 @@
 package room
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"sync"
@@ -14,14 +15,14 @@ type Connection struct {
     room *ChatRoom
 }
 
-func HandleConnection(ws *websocket.Conn, m RoomManager, roomId string) error {
+func HandleConnection(ctx context.Context, ws *websocket.Conn, m RoomManager, roomId string) error {
     log.Println("Handling connection")
     conn := &Connection{
         ws:   ws,
         send: make(chan []byte, 256),
     }
 
-    room, err := m.GetOrCreateRoom(roomId, conn)
+    room, err := m.GetOrCreateRoom(ctx, roomId, conn)
     if err != nil {
         return fmt.Errorf("error creating room: %v", err)
     }

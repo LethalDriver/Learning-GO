@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
@@ -40,12 +41,13 @@ type LoginRequest struct {
 	Password string `json:"password"`
 }
 
-func (s *UserService) RegisterUser(r RegistrationRequest) (string, error) {
+func (s *UserService) RegisterUser(ctx context.Context, r RegistrationRequest) (string, error) {
+
 	err := s.validateRegistrationRequest(r)
 	if err != nil {
 		return "", fmt.Errorf("registration request invalid: %w", err)
 	}
-	exists := s.checkIfUserExists(r.Username)
+	exists := s.checkIfUserExists(ctx, r.Username)
 	if exists {
 		return "", ErrUserExists
 	}
@@ -54,7 +56,7 @@ func (s *UserService) RegisterUser(r RegistrationRequest) (string, error) {
 		return "", fmt.Errorf("failed hashing password: %w", err)
 	}
 	user := entity.NewUserEntity(r.Username, r.Email, string(hashedPassword))
-	err = s.repo.Save(user)
+	err = s.repo.Save(ctx, user)
 	if err != nil {
 		return "", fmt.Errorf("failed saving user %q to the database: %w", user.Username, err)
 	}
@@ -66,8 +68,8 @@ func (s *UserService) RegisterUser(r RegistrationRequest) (string, error) {
 	return token, nil
 }
 
-func (s *UserService) LoginUser(r LoginRequest) (string, error) {
-	user, err := s.repo.GetByUsername(r.Username)
+func (s *UserService) LoginUser(ctx context.Context, r LoginRequest) (string, error) {
+	user, err := s.repo.GetByUsername(ctx, r.Username)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			return "", ErrNoUser
@@ -104,7 +106,7 @@ func (s *UserService) validateRegistrationRequest(r RegistrationRequest) error {
 	return nil
 }
 
-func (s *UserService) checkIfUserExists(username string) bool {
-	_, err := s.repo.GetByUsername(username)
+func (s *UserService) checkIfUserExists(ctx context.Context, username string) bool {
+	_, err := s.repo.GetByUsername(ctx, username)
 	return err != mongo.ErrNoDocuments
 }

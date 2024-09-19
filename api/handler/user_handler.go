@@ -22,6 +22,8 @@ func NewUserHandler(s *service.UserService) *UserHandler {
 }
 
 func (h *UserHandler) HandleRegister(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	var regReq service.RegistrationRequest
     err := parseRequest(r, &regReq)
 	if err != nil {
@@ -30,7 +32,7 @@ func (h *UserHandler) HandleRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := h.s.RegisterUser(regReq)
+	token, err := h.s.RegisterUser(ctx, regReq)
 	if err != nil {
 		if err == service.ErrUserExists {
 			http.Error(w, "User already exists", http.StatusConflict)
@@ -52,6 +54,7 @@ func (h *UserHandler) HandleRegister(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *UserHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	var logReq service.LoginRequest
 	err := parseRequest(r, &logReq)
 	if err != nil {
@@ -60,7 +63,7 @@ func (h *UserHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := h.s.LoginUser(logReq)
+	token, err := h.s.LoginUser(ctx, logReq)
 	if err != nil {
 		log.Printf("Failed logging in user %q: %v", logReq.Username, err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)

@@ -1,6 +1,7 @@
 package room
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"sync"
@@ -10,7 +11,7 @@ import (
 )
 
 type RoomManager interface {
-	GetOrCreateRoom(roomId string, conn *Connection) (*ChatRoom, error)
+	GetOrCreateRoom(ctx context.Context, roomId string, conn *Connection) (*ChatRoom, error)
 }
 
 type InMemoryRoomManager struct {
@@ -26,15 +27,15 @@ func NewRoomManager(repo repository.ChatRoomRepository) *InMemoryRoomManager {
 	}
 }
 
-func (m *InMemoryRoomManager) GetOrCreateRoom(roomId string, conn *Connection) (*ChatRoom, error) {
+func (m *InMemoryRoomManager) GetOrCreateRoom(ctx context.Context, roomId string, conn *Connection) (*ChatRoom, error) {
     m.lock.Lock()
     defer m.lock.Unlock()
 
-    roomEntity, err := m.repo.GetRoom(roomId)
+    roomEntity, err := m.repo.GetRoom(ctx, roomId)
     if err != nil {
         if err == mongo.ErrNoDocuments {
             log.Printf("Room: %s doesn't exist, creating new room", roomId)
-            if _, err := m.repo.CreateRoom(roomId); err != nil {
+            if _, err := m.repo.CreateRoom(ctx, roomId); err != nil {
                 log.Printf("Failed to create room: %v", err)
                 return nil, fmt.Errorf("failed to create room: %w", err)
             }

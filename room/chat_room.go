@@ -1,6 +1,7 @@
 package room
 
 import (
+	"context"
 	"log"
 
 	"example.com/myproject/repository"
@@ -40,7 +41,8 @@ func (r *ChatRoom) Run(repo repository.ChatRoomRepository) {
             }
         case message := <-r.Broadcast:
             log.Printf("Broadcasting message to room %s: %s", r.Id, string(message))
-			err := repo.AddMessageToRoom(r.Id, string(message))
+            ctx := context.Background()
+			err := repo.AddMessageToRoom(ctx, r.Id, string(message))
 			if err != nil {
 				log.Printf("Error saving message %q in room %s", string(message), r.Id)
 				break

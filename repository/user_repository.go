@@ -8,37 +8,36 @@ import (
 )
 
 type UserRepository interface {
-	GetById(id string, ctx context.Context) (*entity.UserEntity, error)
-	GetByUsername(username string, ctx context.Context) (*entity.UserEntity, error)
-	Save(user *entity.UserEntity, ctx context.Context) error
+    GetById(ctx context.Context, id string) (*entity.UserEntity, error)
+    GetByUsername(ctx context.Context, username string) (*entity.UserEntity, error)
+    Save(ctx context.Context, user *entity.UserEntity) error
 }
 
 type MongoUserRepository struct {
-	collection *mongo.Collection
+    collection *mongo.Collection
 }
 
 func (repo *MongoUserRepository) GetCollection() *mongo.Collection {
-	return repo.collection
+    return repo.collection
 }
-
 
 func NewMongoUserRepository(client *mongo.Client, dbName, collectionName string) *MongoUserRepository {
-	collection := client.Database(dbName).Collection(collectionName)
-	return &MongoUserRepository{collection: collection}
+    collection := client.Database(dbName).Collection(collectionName)
+    return &MongoUserRepository{collection: collection}
 }
 
-func (repo *MongoUserRepository) GetById(id string, ctx context.Context) (*entity.UserEntity, error) {
-	return GetByKey[entity.UserEntity]("id", id, repo, ctx)
+func (repo *MongoUserRepository) GetById(ctx context.Context, id string) (*entity.UserEntity, error) {
+    return GetByKey[entity.UserEntity](ctx, "id", id, repo)
 }
 
-func (repo *MongoUserRepository) GetByUsername(username string, ctx context.Context) (*entity.UserEntity, error) {
-	return GetByKey[entity.UserEntity]("username", username, repo, ctx)
+func (repo *MongoUserRepository) GetByUsername(ctx context.Context, username string) (*entity.UserEntity, error) {
+    return GetByKey[entity.UserEntity](ctx, "username", username, repo)
 }
 
- func (repo *MongoUserRepository) Save(user *entity.UserEntity, ctx context.Context) error {
-	_, err := repo.collection.InsertOne(ctx, user)
-	if err != nil {
-		return err
-	}
-	return nil
- }
+func (repo *MongoUserRepository) Save(ctx context.Context, user *entity.UserEntity) error {
+    _, err := repo.collection.InsertOne(ctx, user)
+    if err != nil {
+        return err
+    }
+    return nil
+}
