@@ -29,30 +29,30 @@ func NewMongoChatRoomRepository(client *mongo.Client, dbName, collectionName str
 	return &MongoChatRoomRepository{collection: collection}
 }
 
-func (repo *MongoChatRoomRepository) CreateRoom(id string) (*entity.ChatRoomEntity, error) {
+func (repo *MongoChatRoomRepository) CreateRoom(id string, ctx context.Context) (*entity.ChatRoomEntity, error) {
 	newRoom := &entity.ChatRoomEntity{
 		Id: id,
 		Messages: []entity.MessageEntity{},
 	}
 
-	_, err := repo.collection.InsertOne(context.TODO(), newRoom)
+	_, err := repo.collection.InsertOne(ctx, newRoom)
 	if err != nil {
 		return nil, err
 	}
 	return newRoom, nil
 }
 
-func (repo *MongoChatRoomRepository) GetRoom(id string) (*entity.ChatRoomEntity, error) {
-	return GetByKey[entity.ChatRoomEntity]("id", id, repo)
+func (repo *MongoChatRoomRepository) GetRoom(id string, ctx context.Context) (*entity.ChatRoomEntity, error) {
+	return GetByKey[entity.ChatRoomEntity]("id", id, repo, ctx)
 }
 
-func (repo *MongoChatRoomRepository) DeleteRoom(id string) error {
+func (repo *MongoChatRoomRepository) DeleteRoom(id string, ctx context.Context) error {
 	filter := bson.D{{Key: "id", Value: id}}
-	_, err := repo.collection.DeleteOne(context.TODO(), filter)
+	_, err := repo.collection.DeleteOne(ctx, filter)
 	return err
 }
 
-func (repo *MongoChatRoomRepository) AddMessageToRoom(roomId string, content string) error {
+func (repo *MongoChatRoomRepository) AddMessageToRoom(roomId string, content string, ctx context.Context) error {
 	message := entity.NewMessageEntity(content, roomId)
 	filter := bson.M{"id": roomId}
 	update := bson.M{
@@ -60,6 +60,6 @@ func (repo *MongoChatRoomRepository) AddMessageToRoom(roomId string, content str
 			"messages": message,
 		},
 	}
-	_, err := repo.collection.UpdateOne(context.TODO(), filter, update) 
+	_, err := repo.collection.UpdateOne(ctx, filter, update) 
 	return err
 }

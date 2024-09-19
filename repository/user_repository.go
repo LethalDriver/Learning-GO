@@ -27,16 +27,16 @@ func NewMongoUserRepository(client *mongo.Client, dbName, collectionName string)
 	return &MongoUserRepository{collection: collection}
 }
 
-func (repo *MongoUserRepository) GetById(id string) (*entity.UserEntity, error) {
-	return GetByKey[entity.UserEntity]("id", id, repo)
+func (repo *MongoUserRepository) GetById(id string, ctx context.Context) (*entity.UserEntity, error) {
+	return GetByKey[entity.UserEntity]("id", id, repo, ctx)
 }
 
-func (repo *MongoUserRepository) GetByUsername(username string) (*entity.UserEntity, error) {
-	return GetByKey[entity.UserEntity]("username", username, repo)
+func (repo *MongoUserRepository) GetByUsername(username string, ctx context.Context) (*entity.UserEntity, error) {
+	return GetByKey[entity.UserEntity]("username", username, repo, ctx)
 }
 
- func (repo *MongoUserRepository) Save(user *entity.UserEntity) error {
-	_, err := repo.collection.InsertOne(context.TODO(), user)
+ func (repo *MongoUserRepository) Save(user *entity.UserEntity, ctx context.Context) error {
+	_, err := repo.collection.InsertOne(ctx, user)
 	if err != nil {
 		return err
 	}

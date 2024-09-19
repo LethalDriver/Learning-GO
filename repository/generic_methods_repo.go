@@ -19,10 +19,10 @@ type Comparable interface {
 }
 
 // GetByKey filters the collection by the given key and returns the result.
-func GetByKey[T entity.Entity, V Comparable](key string, value V, repo Repository) (*T, error) {
+func GetByKey[T entity.Entity, V Comparable](key string, value V, repo Repository, ctx context.Context) (*T, error) {
     var entity T
     filter := bson.D{{Key: key, Value: value}}
-    err := repo.GetCollection().FindOne(context.TODO(), filter).Decode(&entity)
+    err := repo.GetCollection().FindOne(ctx, filter).Decode(&entity)
     if err != nil {
         return nil, err
 	}
@@ -30,8 +30,8 @@ func GetByKey[T entity.Entity, V Comparable](key string, value V, repo Repositor
 }
 
 // DeleteById deletes a document from the collection by its ID.
-func DeleteById[V Comparable](id V, repo Repository) error {
+func DeleteById[V Comparable](id V, repo Repository, ctx context.Context) error {
     filter := bson.D{{Key: "id", Value: id}}
-    _, err := repo.GetCollection().DeleteOne(context.TODO(), filter)
+    _, err := repo.GetCollection().DeleteOne(ctx, filter)
     return err
 }
