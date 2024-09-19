@@ -82,9 +82,3 @@ func (c *Connection) writePump() {
     }
     log.Println("Exiting writePump")
 }
-
-func (c *Connection) close() {
-    log.Println("Closing send channel and WebSocket connection")
-    close(c.send)
-    c.ws.Close()
-}
