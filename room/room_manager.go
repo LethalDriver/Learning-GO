@@ -6,6 +6,7 @@ import (
 	"log"
 	"sync"
 
+	"example.com/myproject/entity"
 	"example.com/myproject/repository"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -33,47 +34,44 @@ func (m *InMemoryRoomManager) GetOrCreateRoom(ctx context.Context, roomId string
 
     roomEntity, err := m.repo.GetRoom(ctx, roomId)
     if err != nil {
+        // If room doesn't exist in db, create a room in db and proceed
         if err == mongo.ErrNoDocuments {
-            log.Printf("Room: %s doesn't exist, creating new room", roomId)
+            log.Printf("Room: %s doesn't exist in database, creating new room", roomId)
             if _, err := m.repo.CreateRoom(ctx, roomId); err != nil {
-                log.Printf("Failed to create room: %v", err)
                 return nil, fmt.Errorf("failed to create room: %w", err)
             }
         } else {
-            log.Printf("Error checking for existence of room: %v", err)
             return nil, fmt.Errorf("error checking for existence of room: %w", err)
         }
     }
 
-    if room, exists := m.rooms[roomId]; exists {
-        log.Printf("Room: %s exists, registering connection for user: %s", roomId, conn.userId)
-		room.Register <- conn
-        for _, message := range roomEntity.Messages {
-            log.Printf("Sending existing messages to connection: %s", message.Content)
-            conn.send <- []byte(message.Content)
-        }
-        return room, nil
+    var room *ChatRoom
+    // If room doesn't exist in the in-memory chat room manager, create a new room and run it
+    room, exists := m.rooms[roomId]
+    if !exists {
+        log.Printf("Creating new room with roomId: %s", roomId)
+        room = NewChatRoom(roomId, m.repo)
+        m.rooms[roomId] = room
+        go room.Run(m.repo)
     }
 
-    // Create a new room and register the connection
-    log.Printf("Creating new room with roomId: %s", roomId)
-    newRoom := NewChatRoom(roomId, m.repo)
-    m.rooms[roomId] = newRoom
-
-    // Register new connection to the room and pump messages existing in the repository to the broadcast channel of the room
-	go newRoom.Run(m.repo)
+    // Register new connection to the room 
     log.Printf("Registering connection for user %s", conn.userId)
-    newRoom.Register <- conn
-	go func() {
-		for _, message := range roomEntity.Messages {
-			log.Printf("Broadcasting existing message to room: %s", message.Content)
-			newRoom.Broadcast <- []byte(message.Content)
-		}
-	}()
-    
-    log.Printf("Room: %s created and running", roomId)
+    room.Register <- conn
 
-    return newRoom, nil
+    // Pump messages existing in the repo to the new connection
+	go func() {
+		pumpExistingMessagesToNewConnection(conn, roomEntity.Messages)
+	}()
+    log.Printf("Room: %s running", roomId)
+
+    return room, nil
+}
+
+func pumpExistingMessagesToNewConnection(conn *Connection, messages []entity.MessageEntity) {
+    for _, message := range messages {
+        conn.send <- []byte(message.Content)
+    }
 }
 
 
