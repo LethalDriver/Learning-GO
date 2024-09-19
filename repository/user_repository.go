@@ -8,9 +8,9 @@ import (
 )
 
 type UserRepository interface {
-	GetById(id string) (*entity.UserEntity, error)
-	GetByUsername(username string) (*entity.UserEntity, error)
-	Save(user *entity.UserEntity) error
+	GetById(id string, ctx context.Context) (*entity.UserEntity, error)
+	GetByUsername(username string, ctx context.Context) (*entity.UserEntity, error)
+	Save(user *entity.UserEntity, ctx context.Context) error
 }
 
 type MongoUserRepository struct {

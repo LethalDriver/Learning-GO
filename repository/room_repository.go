@@ -10,10 +10,10 @@ import (
 
 
 type ChatRoomRepository interface {
-	CreateRoom(id string) (*entity.ChatRoomEntity, error)
-	GetRoom(id string) (*entity.ChatRoomEntity, error)
-	DeleteRoom(id string) error
-	AddMessageToRoom(roomId string, content string) error
+	CreateRoom(id string, ctx context.Context) (*entity.ChatRoomEntity, error)
+	GetRoom(id string, ctx context.Context) (*entity.ChatRoomEntity, error)
+	DeleteRoom(id string, ctx context.Context) error
+	AddMessageToRoom(roomId string, content string, ctx context.Context) error
 }
 
 type MongoChatRoomRepository struct {
