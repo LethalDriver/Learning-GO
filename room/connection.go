@@ -15,7 +15,9 @@ type Connection struct {
     room *ChatRoom
 }
 
-func HandleConnection(ctx context.Context, ws *websocket.Conn, m RoomManager, roomId string) error {
+func HandleConnection(ws *websocket.Conn, m RoomManager, roomId string) error {
+    ctx := context.Background()
+
     log.Println("Handling connection")
     conn := &Connection{
         ws:   ws,

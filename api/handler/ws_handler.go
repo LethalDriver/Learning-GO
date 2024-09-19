@@ -27,8 +27,6 @@ func NewWebsocketHandler(m room.RoomManager) *WebsocketHandler {
 }
 
 func (wsh *WebsocketHandler) HandleWebSocketUpgradeRequest(w http.ResponseWriter, r *http.Request) {
-    ctx := r.Context()
-
     roomId := r.PathValue("roomId")
     log.Printf("Upgrading HTTP connection to WebSocket for room ID: %s", roomId)
 
@@ -42,7 +40,7 @@ func (wsh *WebsocketHandler) HandleWebSocketUpgradeRequest(w http.ResponseWriter
 
     // Handle the WebSocket connection
     go func() {
-        if err := room.HandleConnection(ctx, conn, wsh.m, roomId); err != nil {
+        if err := room.HandleConnection(conn, wsh.m, roomId); err != nil {
             log.Println("Error handling WebSocket connection:", err)
             conn.Close()
         }
