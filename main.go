@@ -36,7 +36,7 @@ func main() {
 	chatRoomRepo := repository.NewMongoChatRoomRepository(client, "chatdb", "chatrooms")
 	userRepo := repository.NewMongoUserRepository(client, "chatdb", "users")
 
-	jwtService, err := service.NewJwtService()
+	jwtService, err := service.NewAuthService()
 	if err != nil {
 		log.Fatalf("Failed launching jwt sevice: %v", err)
 	}

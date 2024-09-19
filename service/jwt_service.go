@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"crypto/rsa"
 	"errors"
 	"fmt"
@@ -13,19 +14,19 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-// JwtService represents a JWT service.
-type JwtService struct {
+// AuthService represents a JWT service.
+type AuthService struct {
 	expirationTimeHs int
 	privateKey       *rsa.PrivateKey
 	publicKey        *rsa.PublicKey
 }
 
-// NewJwtService creates a new instance of JwtService.
+// NewAuthService creates a new instance of JwtService.
 // It initializes the JwtService with the expiration time, private key, and public key.
 // The expiration time is read from the TOKEN_EXPIRATION_HS environment variable.
 // The private key is read from the RSA_PRIVATE_KEY environment variable.
 // The public key is read from the RSA_PUBLIC_KEY environment variable.
-func NewJwtService() (*JwtService, error) {
+func NewAuthService() (*AuthService, error) {
 	// Read the expiration time from the environment variable
 	expirationTimeString := os.Getenv("TOKEN_EXPIRATION_HS")
 	if expirationTimeString == "" {
@@ -50,7 +51,7 @@ func NewJwtService() (*JwtService, error) {
 		return nil, fmt.Errorf("failed getting rsa public key %v", err)
 	}
 
-	return &JwtService{
+	return &AuthService{
 		expirationTimeHs: expirationTimeHs,
 		privateKey:       privateKey,
 		publicKey:        publicKey,
@@ -60,7 +61,7 @@ func NewJwtService() (*JwtService, error) {
 // GenerateToken generates a JWT token for the given user ID and username.
 // It uses the RSA private key to sign the token.
 // The expiration time of the token is set based on the expiration time in hours.
-func (s *JwtService) GenerateToken(userId string, username string) (string, error) {
+func (s *AuthService) GenerateToken(userId string, username string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, jwt.MapClaims{
 		"userId":   userId,
 		"username": username,
@@ -75,32 +76,32 @@ func (s *JwtService) GenerateToken(userId string, username string) (string, erro
 	return tokenString, nil
 }
 
-func (s *JwtService) ValidateToken(tokenString string) error {
-    // Load the RSA public key
-    publicKey, err := getRsaPublicKey()
-    if err != nil {
-        return fmt.Errorf("failed to get RSA public key: %v", err)
-    }
+// ValidateTokenWithClaims validates the token and returns the claims if the token is valid.
+func (s *AuthService) ValidateTokenWithClaims(tokenString string) (jwt.MapClaims, error) {
+	// Parse and verify the token
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (any, error) {
+		// Ensure the token's signing method is RSA
+		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return s.publicKey, nil
+	})
 
-    // Parse and verify the token
-    token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-        // Ensure the token's signing method is RSA
-        if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
-            return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-        }
-        return publicKey, nil
-    })
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse token: %v", err)
+	}
 
-    if err != nil {
-        return fmt.Errorf("failed to parse token: %v", err)
-    }
+	// Check if the token is valid
+	if !token.Valid {
+		return nil, errors.New("invalid token")
+	}
 
-    // Check if the token is valid
-    if !token.Valid {
-        return errors.New("invalid token")
-    }
+	// Extract and return the claims
+	if claims, ok := token.Claims.(jwt.MapClaims); ok {
+		return claims, nil
+	}
 
-    return nil
+	return nil, errors.New("failed to extract claims")
 }
 
 
@@ -134,8 +135,11 @@ func getRsaPrivateKey() (*rsa.PrivateKey, error) {
 	return privateKey, nil
 }
 
+type contextKey string
+const userIdKey contextKey = "userId"
+
 // AuthMiddleware is the authorization middleware
-func AuthMiddleware(jwtService *JwtService, next http.Handler) http.Handler {
+func AuthMiddleware(jwtService *AuthService, next http.Handler) http.Handler {
     return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
         authHeader := r.Header.Get("Authorization")
         if authHeader == "" {
@@ -151,15 +155,32 @@ func AuthMiddleware(jwtService *JwtService, next http.Handler) http.Handler {
         }
 
         // Validate the token
-        err := jwtService.ValidateToken(tokenString)
+        claims, err := jwtService.ValidateTokenWithClaims(tokenString)
         if err != nil {
-            http.Error(w, "Invalid token: "+err.Error(), http.StatusUnauthorized)
+            http.Error(w, fmt.Sprintf("Invalid token: %v", err), http.StatusUnauthorized)
             return
         }
+
+		userId, ok := claims["user_id"].(string)
+		if !ok {
+			http.Error(w, "Invalid token claims", http.StatusUnauthorized)
+			return
+		}
+
+		ctx := context.WithValue(r.Context(), userIdKey, userId)
+		r = r.WithContext(ctx)
 
         // Call the next handler
         next.ServeHTTP(w, r)
     })
+}
+
+func GetUserIdFromContext(ctx context.Context) (string, error) {
+	userId, ok := ctx.Value(userIdKey).(string)
+	if !ok {
+		return "", fmt.Errorf("user id not found in context")
+	}
+	return userId, nil
 }
 
 

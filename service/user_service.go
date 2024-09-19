@@ -19,10 +19,10 @@ var (
 
 type UserService struct {
 	repo      repository.UserRepository
-	jwt *JwtService
+	jwt *AuthService
 }
 
-func NewUserService(repo repository.UserRepository, jwt *JwtService) *UserService {
+func NewUserService(repo repository.UserRepository, jwt *AuthService) *UserService {
 	return &UserService{
 		repo: repo,
 		jwt: jwt,
