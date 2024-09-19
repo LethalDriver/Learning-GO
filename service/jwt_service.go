@@ -161,7 +161,7 @@ func AuthMiddleware(jwtService *AuthService, next http.Handler) http.Handler {
             return
         }
 
-		userId, ok := claims["user_id"].(string)
+		userId, ok := claims["userId"].(string)
 		if !ok {
 			http.Error(w, "Invalid token claims", http.StatusUnauthorized)
 			return

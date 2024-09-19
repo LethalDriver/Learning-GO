@@ -36,18 +36,18 @@ func main() {
 	chatRoomRepo := repository.NewMongoChatRoomRepository(client, "chatdb", "chatrooms")
 	userRepo := repository.NewMongoUserRepository(client, "chatdb", "users")
 
-	jwtService, err := service.NewAuthService()
+	authService, err := service.NewAuthService()
 	if err != nil {
 		log.Fatalf("Failed launching jwt sevice: %v", err)
 	}
-	userService := service.NewUserService(userRepo, jwtService)
+	userService := service.NewUserService(userRepo, authService)
 	roomManager := room.NewRoomManager(chatRoomRepo)
 
 	userHandler := handler.NewUserHandler(userService)
 	wsHandler := handler.NewWebsocketHandler(roomManager)
 
 
-	router := initializeRoutes(userHandler, wsHandler) // configure routes
+	router := initializeRoutes(userHandler, wsHandler, authService) // configure routes
 	  
 	server := &http.Server{
 		Addr:    ":8080",
@@ -58,11 +58,11 @@ func main() {
 	server.ListenAndServe() // Run the http server
 }
 	  
-func initializeRoutes(u *handler.UserHandler, ws *handler.WebsocketHandler) *http.ServeMux {
+func initializeRoutes(u *handler.UserHandler, ws *handler.WebsocketHandler, auth *service.AuthService) *http.ServeMux {
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /api/register", u.HandleRegister)
-	mux.HandleFunc("GET /room/{roomId}", ws.HandleWebSocketUpgradeRequest)
 	mux.HandleFunc("POST /api/login", u.HandleLogin)
+    mux.Handle("GET /room/{roomId}", service.AuthMiddleware(auth, http.HandlerFunc(ws.HandleWebSocketUpgradeRequest)))
 	return mux
 }
 
