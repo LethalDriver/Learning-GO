@@ -67,7 +67,7 @@ func (repo *MongoChatRoomRepository) InsertSeenBy(ctx context.Context, roomId st
 	filter := bson.M{"id": roomId, "messages.id": messageId}
 	update := bson.M{
 		"$addToSet": bson.M{
-			"messages.$.seen_by": userId,
+			"messages.$.seenBy": userId,
 		},
 	}
 	_, err := repo.collection.UpdateOne(ctx, filter, update)
