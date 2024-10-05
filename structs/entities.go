@@ -2,8 +2,6 @@ package structs
 
 import (
 	"time"
-
-	"github.com/google/uuid"
 )
 
 type Entity interface {
@@ -31,27 +29,6 @@ type MessageEntity struct {
     SentBy     string    `bson:"sentBy" json:"sentBy"`
     SentAt     time.Time `bson:"sentAt" json:"sentAt"`
     SeenBy     []string  `bson:"seenBy" json:"seenBy"`
-}
-
-func NewMessageEntity(content, chatRoomId, messageType, sentBy string, sentAt time.Time, seenBy []string) *MessageEntity {
-    return &MessageEntity{
-        Id:         uuid.New().String(),
-        Content:    content,
-        ChatRoomId: chatRoomId,
-        Type:       messageType,
-        SentBy:     sentBy,
-        SentAt:     sentAt,
-        SeenBy:     seenBy,
-    }
-}
-
-func NewUserEntity(username string, email string, password string) *UserEntity {
-    return &UserEntity{
-        Id:       uuid.New().String(),
-        Username: username,
-        Email:    email,
-        Password: password,
-    }
 }
 
 func (user UserEntity) GetId() string {

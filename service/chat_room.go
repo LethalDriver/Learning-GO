@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"log"
-	"time"
 
 	"example.com/myproject/structs"
 )
@@ -41,9 +40,8 @@ func (r *ChatRoom) Run(service *RoomService) {
 		case message := <-r.Broadcast:
 			log.Printf("Broadcasting message to room %s: %s", r.Id, string(message.Content))
 			ctx := context.Background()
-			message.SentAt = time.Now()
-
-			id, err := service.SaveMessage(ctx, r.Id, &message)
+			
+			id, err := service.ProcessMessage(ctx, r.Id, &message)
 			if err != nil {
 				log.Printf("Error saving message %q in room %s", string(message.Content), r.Id)
 				break
