@@ -74,8 +74,9 @@ func (s *RoomService) CreateRoom(ctx context.Context, roomId string) (*structs.C
 }
 
 func (s *RoomService) ProcessMessage(ctx context.Context, roomId string, message *structs.Message) (string, error) {
-	message.SentAt = time.Now()
 	message.Id = uuid.New().String()
+	message.SentAt = time.Now()
+	message.SeenBy = []structs.UserDetails{}
 	entity := MapMessageToEntity(message, roomId)
 	return entity.Id, s.roomRepo.AddMessageToRoom(ctx, roomId, entity)
 }
