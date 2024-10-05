@@ -4,19 +4,21 @@ import (
 	"log"
 	"net/http"
 
-	"example.com/myproject/room"
 	"example.com/myproject/service"
+	"example.com/myproject/structs"
 	"github.com/gorilla/websocket"
 )
 
 type WebsocketHandler struct {
     upgrader websocket.Upgrader
-    m room.RoomManager
+    rs *service.RoomService
+	us *service.UserService
 }
 
-func NewWebsocketHandler(m room.RoomManager) *WebsocketHandler {
+func NewWebsocketHandler(rs *service.RoomService, us *service.UserService) *WebsocketHandler {
     return &WebsocketHandler{
-        m: m,
+        rs: rs,
+		us: us,
         upgrader: websocket.Upgrader{
             ReadBufferSize:  1024,
             WriteBufferSize: 1024,
@@ -28,13 +30,23 @@ func NewWebsocketHandler(m room.RoomManager) *WebsocketHandler {
 }
 
 func (wsh *WebsocketHandler) HandleWebSocketUpgradeRequest(w http.ResponseWriter, r *http.Request) {
-    roomId := r.PathValue("roomId")
+    ctx := r.Context()
+	roomId := r.PathValue("roomId")
     log.Printf("Upgrading HTTP connection to WebSocket for room ID: %s", roomId)
 
     userId, err := service.GetUserIdFromContext(r.Context())
     if err != nil {
         w.WriteHeader(http.StatusInternalServerError)
     }
+	user, err := wsh.us.GetUserById(ctx, userId)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+
+	userDetails := structs.UserDetails{
+		Id:       user.Id,
+		Username: user.Username,
+	}
 
     // Upgrade the HTTP connection to a WebSocket connection
     conn, err := wsh.upgrader.Upgrade(w, r, nil)
@@ -46,7 +58,7 @@ func (wsh *WebsocketHandler) HandleWebSocketUpgradeRequest(w http.ResponseWriter
 
     // Handle the WebSocket connection
     go func() {
-        if err := room.HandleConnection(conn, wsh.m, roomId, userId); err != nil {
+        if err := service.HandleConnection(conn, wsh.rs, roomId, userDetails); err != nil {
             log.Println("Error handling WebSocket connection:", err)
             conn.Close()
         }

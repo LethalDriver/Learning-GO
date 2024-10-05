@@ -7,7 +7,6 @@ import (
 
 	"example.com/myproject/api/handler"
 	"example.com/myproject/repository"
-	"example.com/myproject/room"
 	"example.com/myproject/service"
 	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -41,10 +40,11 @@ func main() {
 		log.Fatalf("Failed launching jwt sevice: %v", err)
 	}
 	userService := service.NewUserService(userRepo, authService)
-	roomManager := room.NewRoomManager(chatRoomRepo)
+	roomManager := service.NewRoomManager()
+	roomService := service.NewRoomService(chatRoomRepo, userRepo, roomManager)
 
 	userHandler := handler.NewUserHandler(userService)
-	wsHandler := handler.NewWebsocketHandler(roomManager)
+	wsHandler := handler.NewWebsocketHandler(roomService, userService)
 
 
 	router := initializeRoutes(userHandler, wsHandler, authService) // configure routes
