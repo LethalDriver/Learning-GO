@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 
-	"example.com/myproject/entity"
 	"example.com/myproject/repository"
+	"example.com/myproject/structs"
 
 	"go.mongodb.org/mongo-driver/mongo"
 	"golang.org/x/crypto/bcrypt"
@@ -41,6 +41,28 @@ type LoginRequest struct {
 	Password string `json:"password"`
 }
 
+func (s *UserService) GetUser(ctx context.Context, username string) (*structs.UserEntity, error) {
+	user, err := s.repo.GetByUsername(ctx, username)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, ErrNoUser
+		}
+		return nil, errors.New("unknown error while getting user")
+	}
+	return user, nil
+}
+
+func (s *UserService) GetUserById(ctx context.Context, id string) (*structs.UserEntity, error) {
+	user, err := s.repo.GetById(ctx, id)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, ErrNoUser
+		}
+		return nil, errors.New("unknown error while getting user")
+	}
+	return user, nil
+}
+
 func (s *UserService) RegisterUser(ctx context.Context, r RegistrationRequest) (string, error) {
 
 	err := s.validateRegistrationRequest(r)
@@ -55,7 +77,7 @@ func (s *UserService) RegisterUser(ctx context.Context, r RegistrationRequest) (
 	if err != nil {
 		return "", fmt.Errorf("failed hashing password: %w", err)
 	}
-	user := entity.NewUserEntity(r.Username, r.Email, string(hashedPassword))
+	user := structs.NewUserEntity(r.Username, r.Email, string(hashedPassword))
 	err = s.repo.Save(ctx, user)
 	if err != nil {
 		return "", fmt.Errorf("failed saving user %q to the database: %w", user.Username, err)
