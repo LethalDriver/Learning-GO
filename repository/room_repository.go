@@ -13,6 +13,7 @@ type ChatRoomRepository interface {
     GetRoom(ctx context.Context, id string) (*structs.ChatRoomEntity, error)
     DeleteRoom(ctx context.Context, id string) error
     AddMessageToRoom(ctx context.Context, roomId string, message *structs.MessageEntity) error
+	InsertSeenBy(ctx context.Context, roomId string, messageId string, userId string) error
 }
 
 type MongoChatRoomRepository struct {
@@ -62,3 +63,13 @@ func (repo *MongoChatRoomRepository) AddMessageToRoom(ctx context.Context, roomI
     return err
 }
 
+func (repo *MongoChatRoomRepository) InsertSeenBy(ctx context.Context, roomId string, messageId string, userId string) error {
+	filter := bson.M{"id": roomId, "messages.id": messageId}
+	update := bson.M{
+		"$addToSet": bson.M{
+			"messages.$.seen_by": userId,
+		},
+	}
+	_, err := repo.collection.UpdateOne(ctx, filter, update)
+	return err
+}

@@ -6,6 +6,11 @@ import (
 	"fmt"
 	"time"
 )
+type DataType int
+const (
+	MessageWithContent DataType = iota
+	StatusUpdate
+)
 
 type MessageType int
 
@@ -75,4 +80,20 @@ func (mt *MessageType) UnmarshalJSON(data []byte) error {
     }
 
     return nil
+}
+
+func DetermineDataType(messageBytes []byte) (DataType, error) {
+    var temp map[string]any
+    err := json.Unmarshal(messageBytes, &temp)
+    if err != nil {
+        return -1, err
+    }
+
+    if _, ok := temp["messageId"]; ok {
+        return StatusUpdate, nil
+    } else if _, ok := temp["id"]; ok {
+        return MessageWithContent, nil
+    } else {
+        return -1, errors.New("unknown message type")
+    }
 }

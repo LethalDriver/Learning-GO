@@ -14,7 +14,8 @@ import (
 type Connection struct {
     ws   *websocket.Conn
     user structs.UserDetails
-    send chan structs.Message
+    sendMessage chan structs.Message
+	sendSeenUpdate chan structs.SeenUpdate
     room *ChatRoom
 }
 
@@ -25,7 +26,8 @@ func HandleConnection(ws *websocket.Conn, s *RoomService, roomId string, user st
     conn := &Connection{
         ws:   ws,
         user: user,
-        send: make(chan structs.Message, 256),
+        sendMessage: make(chan structs.Message, 256),
+		sendSeenUpdate: make(chan structs.SeenUpdate, 256),
     }
 
     room, err := s.GetOrCreateRoom(ctx, roomId, conn)
@@ -67,14 +69,36 @@ func (c *Connection) readPump() {
             break
         }
         log.Printf("Read message from connection: %q, address: %p", string(messageBytes), c)
-		var msg structs.Message
-		err = json.Unmarshal(messageBytes, &msg)
-		if err != nil {
-			log.Printf("Error unmarshalling message: %v", err)
-			break
-		}
-		msg.SentBy = c.user
-        c.room.Broadcast <- msg
+		messageType, err := structs.DetermineDataType(messageBytes)
+        if err != nil {
+            log.Printf("Error determining message type: %v", err)
+            break
+        }
+
+        switch messageType {
+        case structs.StatusUpdate:
+            var seenUpdate structs.SeenUpdate
+            err = json.Unmarshal(messageBytes, &seenUpdate)
+            if err != nil {
+                log.Printf("Error unmarshalling SeenUpdate: %v", err)
+                break
+            }
+			seenUpdate.SeenBy = c.user
+			log.Printf("Received SeenUpdate: %+v", seenUpdate)
+			c.room.StatusUpdates <- seenUpdate
+        case structs.MessageWithContent:
+            var msg structs.Message
+            err = json.Unmarshal(messageBytes, &msg)
+            if err != nil {
+                log.Printf("Error unmarshalling Message: %v", err)
+                break
+            }
+            msg.SentBy = c.user
+            c.room.Broadcast <- msg
+            log.Printf("Received Message: %+v", msg)
+        default:
+            log.Printf("Unknown message type: %q", string(messageBytes))
+        }
     }
     log.Println("Exiting readPump")
 }
@@ -86,17 +110,39 @@ func (c *Connection) writePump() {
         c.ws.Close()
     }()
 
-    for message := range c.send {
-		messageBytes, err := json.Marshal(message)
-		if err != nil {
-			log.Println("Error marshalling message:", err)
-			break
-		}
-        if err := c.ws.WriteMessage(websocket.TextMessage, messageBytes); err != nil {
-            log.Printf("Error writing message in writePump: %v", err)
-            break
+    for {
+        select {
+        case message, ok := <-c.sendMessage:
+            if !ok {
+                log.Println("sendMessage channel closed")
+                return
+            }
+            messageBytes, err := json.Marshal(message)
+            if err != nil {
+                log.Println("Error marshalling message:", err)
+                return
+            }
+            if err := c.ws.WriteMessage(websocket.TextMessage, messageBytes); err != nil {
+                log.Printf("Error writing message in writePump: %v", err)
+                return
+            }
+            log.Printf("Wrote message to connection: %q, address: %p", string(messageBytes), c)
+
+        case seenUpdate, ok := <-c.sendSeenUpdate:
+            if !ok {
+                log.Println("seenUpdate channel closed")
+                return
+            }
+            seenUpdateBytes, err := json.Marshal(seenUpdate)
+            if err != nil {
+                log.Println("Error marshalling seen update:", err)
+                return
+            }
+            if err := c.ws.WriteMessage(websocket.TextMessage, seenUpdateBytes); err != nil {
+                log.Printf("Error writing seen update in writePump: %v", err)
+                return
+            }
+            log.Printf("Wrote seen update to connection: %q, address: %p", string(seenUpdateBytes), c)
         }
-        log.Printf("Wrote message to connection: %q, address: %p", string(messageBytes), c)
     }
-    log.Println("Exiting writePump")
 }

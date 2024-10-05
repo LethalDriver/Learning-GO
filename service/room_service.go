@@ -81,6 +81,10 @@ func (s *RoomService) ProcessMessage(ctx context.Context, roomId string, message
 	return entity.Id, s.roomRepo.AddMessageToRoom(ctx, roomId, entity)
 }
 
+func (s *RoomService) ProcessSeenUpdate(ctx context.Context, roomId string, update *structs.SeenUpdate) error {
+	return s.roomRepo.InsertSeenBy(ctx, roomId, update.MessageId, update.SeenBy.Id)
+}
+
 func MapMessageToEntity(message *structs.Message, chatRoomId string) *structs.MessageEntity {
 	return &structs.MessageEntity{
 		Id:      message.Id,
@@ -132,7 +136,7 @@ func (s *RoomService) MapEntityToMessage(ctx context.Context, entity *structs.Me
 
 func pumpExistingMessagesToNewConnection(conn *Connection, messages []structs.Message) {
     for _, message := range messages {
-        conn.send <- message
+        conn.sendMessage <- message
     }
 }
 
