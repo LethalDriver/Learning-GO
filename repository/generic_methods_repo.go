@@ -3,7 +3,7 @@ package repository
 import (
 	"context"
 
-	"example.com/myproject/entity"
+	"example.com/myproject/structs"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -19,7 +19,7 @@ type Comparable interface {
 }
 
 // GetByKey filters the collection by the given key and returns the result.
-func GetByKey[T entity.Entity, V Comparable](ctx context.Context, key string, value V, repo Repository) (*T, error) {
+func GetByKey[T structs.Entity, V Comparable](ctx context.Context, key string, value V, repo Repository) (*T, error) {
     var entity T
     filter := bson.D{{Key: key, Value: value}}
     err := repo.GetCollection().FindOne(ctx, filter).Decode(&entity)

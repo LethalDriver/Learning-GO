@@ -3,16 +3,16 @@ package repository
 import (
 	"context"
 
-	"example.com/myproject/entity"
+	"example.com/myproject/structs"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type ChatRoomRepository interface {
-    CreateRoom(ctx context.Context, id string) (*entity.ChatRoomEntity, error)
-    GetRoom(ctx context.Context, id string) (*entity.ChatRoomEntity, error)
+    CreateRoom(ctx context.Context, id string) (*structs.ChatRoomEntity, error)
+    GetRoom(ctx context.Context, id string) (*structs.ChatRoomEntity, error)
     DeleteRoom(ctx context.Context, id string) error
-    AddMessageToRoom(ctx context.Context, roomId string, content string) error
+    AddMessageToRoom(ctx context.Context, roomId string, message *structs.MessageEntity) error
 }
 
 type MongoChatRoomRepository struct {
@@ -28,10 +28,10 @@ func NewMongoChatRoomRepository(client *mongo.Client, dbName, collectionName str
     return &MongoChatRoomRepository{collection: collection}
 }
 
-func (repo *MongoChatRoomRepository) CreateRoom(ctx context.Context, id string) (*entity.ChatRoomEntity, error) {
-    newRoom := &entity.ChatRoomEntity{
+func (repo *MongoChatRoomRepository) CreateRoom(ctx context.Context, id string) (*structs.ChatRoomEntity, error) {
+    newRoom := &structs.ChatRoomEntity{
         Id:       id,
-        Messages: []entity.MessageEntity{},
+        Messages: []structs.MessageEntity{},
     }
 
     _, err := repo.collection.InsertOne(ctx, newRoom)
@@ -41,8 +41,8 @@ func (repo *MongoChatRoomRepository) CreateRoom(ctx context.Context, id string) 
     return newRoom, nil
 }
 
-func (repo *MongoChatRoomRepository) GetRoom(ctx context.Context, id string) (*entity.ChatRoomEntity, error) {
-    return GetByKey[entity.ChatRoomEntity](ctx, "id", id, repo)
+func (repo *MongoChatRoomRepository) GetRoom(ctx context.Context, id string) (*structs.ChatRoomEntity, error) {
+    return GetByKey[structs.ChatRoomEntity](ctx, "id", id, repo)
 }
 
 func (repo *MongoChatRoomRepository) DeleteRoom(ctx context.Context, id string) error {
@@ -51,8 +51,7 @@ func (repo *MongoChatRoomRepository) DeleteRoom(ctx context.Context, id string) 
     return err
 }
 
-func (repo *MongoChatRoomRepository) AddMessageToRoom(ctx context.Context, roomId string, content string) error {
-    message := entity.NewMessageEntity(content, roomId)
+func (repo *MongoChatRoomRepository) AddMessageToRoom(ctx context.Context, roomId string, message *structs.MessageEntity) error {
     filter := bson.M{"id": roomId}
     update := bson.M{
         "$push": bson.M{
@@ -62,3 +61,4 @@ func (repo *MongoChatRoomRepository) AddMessageToRoom(ctx context.Context, roomI
     _, err := repo.collection.UpdateOne(ctx, filter, update)
     return err
 }
+
