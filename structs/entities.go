@@ -1,6 +1,8 @@
-package entity
+package structs
 
 import (
+	"time"
+
 	"github.com/google/uuid"
 )
 
@@ -22,17 +24,25 @@ type ChatRoomEntity struct {
 
 
 type MessageEntity struct {
-	Id       string         `bson:"id" json:"id"`
-	Content  string         `bson:"content" json:"content"`
-	ChatRoomId string `bson:"chatRoomId" json:"chatRoomId"`
+    Id         string    `bson:"id" json:"id"`
+    Content    string    `bson:"content" json:"content"`
+    ChatRoomId string    `bson:"chatRoomId" json:"chatRoomId"`
+    Type       string    `bson:"messageType" json:"messageType"`
+    SentBy     string    `bson:"sentBy" json:"sentBy"`
+    SentAt     time.Time `bson:"sentAt" json:"sentAt"`
+    SeenBy     []string  `bson:"seenBy" json:"seenBy"`
 }
 
-func NewMessageEntity(content string, chatRoomId string) *MessageEntity {
-	return &MessageEntity{
-		Id:       uuid.New().String(),
-		Content:  content,
-		ChatRoomId: chatRoomId,
-	}
+func NewMessageEntity(content, chatRoomId, messageType, sentBy string, sentAt time.Time, seenBy []string) *MessageEntity {
+    return &MessageEntity{
+        Id:         uuid.New().String(),
+        Content:    content,
+        ChatRoomId: chatRoomId,
+        Type:       messageType,
+        SentBy:     sentBy,
+        SentAt:     sentAt,
+        SeenBy:     seenBy,
+    }
 }
 
 func NewUserEntity(username string, email string, password string) *UserEntity {
