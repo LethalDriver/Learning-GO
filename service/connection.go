@@ -63,17 +63,17 @@ func (c *Connection) readPump() {
 		}
 		log.Printf("Read message from connection: %q, address: %p", string(messageBytes), c)
 
-		messageType, err := structs.DetermineMessageType(messageBytes)
-		if err != nil {
-			log.Printf("Error determining message type: %v", err)
+		var incomingMessage structs.WsIncomingMessage
+		if err := c.unmarshalMessage(messageBytes, &incomingMessage); err != nil {
+			log.Printf("Error unmarshalling incoming message: %v", err)
 			break
 		}
-
-		switch messageType {
+		data := incomingMessage.Data
+		switch incomingMessage.Type {
 		case structs.TypeTextMessage:
 			var msg structs.Message
-			if err := c.unmarshalMessage(messageBytes, &msg); err != nil {
-				log.Printf("Error unmarshalling message: %v", err)
+			if err := json.Unmarshal(data, &msg); err != nil {
+				log.Printf("Error unmarshalling message data: %v", err)
 				break
 			}
 			msg.SentBy = c.user
@@ -82,7 +82,7 @@ func (c *Connection) readPump() {
 
 		case structs.TypeSeenMessage:
 			var seenMessage structs.SeenMessage
-			if err := c.unmarshalMessage(messageBytes, &seenMessage); err != nil {
+			if err := json.Unmarshal(data, &seenMessage); err != nil {
 				log.Printf("Error unmarshalling seen message: %v", err)
 				break
 			}
@@ -92,16 +92,15 @@ func (c *Connection) readPump() {
 
 		case structs.TypeDeleteMessage:
 			var deleteMessage structs.DeleteMessage
-			if err := c.unmarshalMessage(messageBytes, &deleteMessage); err != nil {
+			if err := json.Unmarshal(data, &deleteMessage); err != nil {
 				log.Printf("Error unmarshalling delete message: %v", err)
 				break
 			}
-			deleteMessage.SentBy = c.user
 			log.Printf("Received DeleteMessage: %+v", deleteMessage)
 			c.room.Delete <- deleteMessage
 
 		default:
-			log.Printf("Unknown message type: %q", string(messageBytes))
+			log.Printf("Unknown message type: %s", incomingMessage.Type)
 		}
 	}
 	log.Println("Exiting readPump")

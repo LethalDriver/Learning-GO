@@ -16,8 +16,8 @@ const (
 )
 
 type WsIncomingMessage struct {
-	Type MessageType `json:"type"`
-	Data any         `json:"data"`
+	Type MessageType     `json:"type"`
+	Data json.RawMessage `json:"data"`
 }
 
 type Message struct {
@@ -97,22 +97,4 @@ func (mt *MessageType) UnmarshalJSON(data []byte) error {
 	}
 
 	return nil
-}
-
-func DetermineMessageType(messageBytes []byte) (MessageType, error) {
-	var msg WsIncomingMessage
-	err := json.Unmarshal(messageBytes, &msg)
-	if err != nil {
-		return -1, err
-	}
-	switch msg.Type {
-	case TypeTextMessage:
-		return TypeTextMessage, nil
-	case TypeSeenMessage:
-		return TypeSeenMessage, nil
-	case TypeDeleteMessage:
-		return TypeDeleteMessage, nil
-	default:
-		return -1, errors.New("unknown message type")
-	}
 }
