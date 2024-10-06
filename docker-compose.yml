@@ -9,6 +9,8 @@ services:
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: example
+    networks:
+      - chat_app_network
 
   api-gateway:
     build:
@@ -19,7 +21,7 @@ services:
     environment:
       - PORT=8080
     volumes:
-      - ./api_gateway/public_key.pem:/app/public_key.pem
+      - ./api-gateway/public_key.pem:/app/public_key.pem
     depends_on:
       - user-service
       - chat-service
@@ -33,8 +35,11 @@ services:
     ports:
       - "8081:8081"
     environment:
+      - TOKEN_EXP_HS=3
       - MONGO_URI=mongodb://root:example@mongodb:27017
       - PORT=8081
+    depends_on:
+      - mongodb
     networks:
       - chat_app_network
 
@@ -47,6 +52,8 @@ services:
     environment:
       - MONGO_URI=mongodb://root:example@mongodb:27017
       - PORT=8082
+    depends_on:
+      - mongodb
     networks:
       - chat_app_network
 
