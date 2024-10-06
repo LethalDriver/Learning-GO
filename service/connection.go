@@ -10,11 +10,12 @@ import (
 )
 
 type Connection struct {
-	ws             *websocket.Conn
-	user           structs.UserDetails
-	sendMessage    chan structs.Message
-	sendSeenUpdate chan structs.SeenMessage
-	room           *ChatRoom
+	ws          *websocket.Conn
+	user        structs.UserDetails
+	sendMessage chan structs.Message
+	sendSeen    chan structs.SeenMessage
+	sendDelete  chan structs.DeleteMessage
+	room        *ChatRoom
 }
 
 func handleConnection(ws *websocket.Conn, room *ChatRoom, user structs.UserDetails) error {
@@ -22,11 +23,12 @@ func handleConnection(ws *websocket.Conn, room *ChatRoom, user structs.UserDetai
 	log.Printf("Handling connection from %s", clientIP)
 
 	conn := &Connection{
-		ws:             ws,
-		user:           user,
-		sendMessage:    make(chan structs.Message, 256),
-		sendSeenUpdate: make(chan structs.SeenMessage, 256),
-		room:           room,
+		ws:          ws,
+		user:        user,
+		sendMessage: make(chan structs.Message, 256),
+		sendSeen:    make(chan structs.SeenMessage, 256),
+		sendDelete:  make(chan structs.DeleteMessage, 256),
+		room:        room,
 	}
 
 	var wg sync.WaitGroup
@@ -68,26 +70,35 @@ func (c *Connection) readPump() {
 		}
 
 		switch messageType {
-		case structs.TypeSeenMessage:
-			var seenUpdate structs.SeenMessage
-			if err := c.unmarshalMessage(messageBytes, &seenUpdate); err != nil {
-				break
-			}
-			seenUpdate.SeenBy = c.user
-			log.Printf("Received SeenUpdate: %+v", seenUpdate)
-			c.room.StatusUpdates <- seenUpdate
-
 		case structs.TypeTextMessage:
 			var msg structs.Message
 			if err := c.unmarshalMessage(messageBytes, &msg); err != nil {
+				log.Printf("Error unmarshalling message: %v", err)
 				break
 			}
 			msg.SentBy = c.user
-			c.room.Broadcast <- msg
+			c.room.Text <- msg
 			log.Printf("Received Message: %+v", msg)
 
+		case structs.TypeSeenMessage:
+			var seenMessage structs.SeenMessage
+			if err := c.unmarshalMessage(messageBytes, &seenMessage); err != nil {
+				log.Printf("Error unmarshalling seen message: %v", err)
+				break
+			}
+			seenMessage.SeenBy = c.user
+			log.Printf("Received SeenUpdate: %+v", seenMessage)
+			c.room.Seen <- seenMessage
+
 		case structs.TypeDeleteMessage:
-			//TODO
+			var deleteMessage structs.DeleteMessage
+			if err := c.unmarshalMessage(messageBytes, &deleteMessage); err != nil {
+				log.Printf("Error unmarshalling delete message: %v", err)
+				break
+			}
+			deleteMessage.SentBy = c.user
+			log.Printf("Received DeleteMessage: %+v", deleteMessage)
+			c.room.Delete <- deleteMessage
 
 		default:
 			log.Printf("Unknown message type: %q", string(messageBytes))
@@ -107,15 +118,27 @@ func (c *Connection) writePump() {
 				return
 			}
 			if err := c.writeMessage(websocket.TextMessage, message); err != nil {
+				log.Printf("Error writing message: %v to websocket connection: %s", err, c.ws.RemoteAddr().String())
 				return
 			}
 
-		case seenUpdate, ok := <-c.sendSeenUpdate:
+		case seenMessage, ok := <-c.sendSeen:
 			if !ok {
 				log.Println("seenUpdate channel closed")
 				return
 			}
-			if err := c.writeMessage(websocket.TextMessage, seenUpdate); err != nil {
+			if err := c.writeMessage(websocket.TextMessage, seenMessage); err != nil {
+				log.Printf("Error writing seen message: %v to websocket connection: %s", err, c.ws.RemoteAddr().String())
+				return
+			}
+
+		case deleteMessage, ok := <-c.sendDelete:
+			if !ok {
+				log.Println("deleteMessage channel closed")
+				return
+			}
+			if err := c.writeMessage(websocket.TextMessage, deleteMessage); err != nil {
+				log.Printf("Error writing delete message: %v to websocket connection: %s", err, c.ws.RemoteAddr().String())
 				return
 			}
 		}

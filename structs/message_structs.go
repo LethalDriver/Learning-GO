@@ -45,8 +45,8 @@ type SeenMessage struct {
 }
 
 type DeleteMessage struct {
-	MessageId string `json:"messageId"`
-	SentBy    string `json:"sentBy"`
+	MessageId string      `json:"messageId"`
+	SentBy    UserDetails `json:"sentBy"`
 }
 
 func (mt MessageType) String() string {

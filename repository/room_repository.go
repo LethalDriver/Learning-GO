@@ -19,6 +19,7 @@ type ChatRoomRepository interface {
 	AddMessageToRoom(ctx context.Context, roomId string, message *structs.MessageEntity) error
 	InsertSeenBy(ctx context.Context, roomId string, messageId string, userId string) error
 	GetMessages(ctx context.Context, roomId string) ([]structs.MessageEntity, error)
+	DeleteMessage(ctx context.Context, roomId string, messageId string) error
 }
 
 type MongoChatRoomRepository struct {
@@ -95,4 +96,15 @@ func (repo *MongoChatRoomRepository) GetMessages(ctx context.Context, roomId str
 		return nil, err
 	}
 	return room.Messages, nil
+}
+
+func (repo *MongoChatRoomRepository) DeleteMessage(ctx context.Context, roomId string, messageId string) error {
+	filter := bson.M{"id": roomId, "messages.id": messageId}
+	update := bson.M{
+		"$pull": bson.M{
+			"messages": bson.M{"id": messageId},
+		},
+	}
+	_, err := repo.collection.UpdateOne(ctx, filter, update)
+	return err
 }
