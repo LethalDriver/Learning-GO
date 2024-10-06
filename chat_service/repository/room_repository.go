@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	"example.com/myproject/structs"
+	"example.com/chat_app/common/utils"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -13,12 +13,12 @@ import (
 var ErrRoomExists = errors.New("room already exists")
 
 type ChatRoomRepository interface {
-	CreateRoom(ctx context.Context, id string) (*structs.ChatRoomEntity, error)
-	GetRoom(ctx context.Context, id string) (*structs.ChatRoomEntity, error)
+	CreateRoom(ctx context.Context, id string) (*ChatRoomEntity, error)
+	GetRoom(ctx context.Context, id string) (*ChatRoomEntity, error)
 	DeleteRoom(ctx context.Context, id string) error
-	AddMessageToRoom(ctx context.Context, roomId string, message *structs.MessageEntity) error
+	AddMessageToRoom(ctx context.Context, roomId string, message *Message) error
 	InsertSeenBy(ctx context.Context, roomId string, messageId string, userId string) error
-	GetMessages(ctx context.Context, roomId string) ([]structs.MessageEntity, error)
+	GetMessages(ctx context.Context, roomId string) ([]Message, error)
 	DeleteMessage(ctx context.Context, roomId string, messageId string) error
 }
 
@@ -35,9 +35,9 @@ func NewMongoChatRoomRepository(client *mongo.Client, dbName, collectionName str
 	return &MongoChatRoomRepository{collection: collection}
 }
 
-func (repo *MongoChatRoomRepository) CreateRoom(ctx context.Context, id string) (*structs.ChatRoomEntity, error) {
+func (repo *MongoChatRoomRepository) CreateRoom(ctx context.Context, id string) (*ChatRoomEntity, error) {
 	// Check if a room with the given ID already exists
-	existingRoom := &structs.ChatRoomEntity{}
+	existingRoom := &ChatRoomEntity{}
 	err := repo.collection.FindOne(ctx, bson.M{"id": id}).Decode(existingRoom)
 	if err == nil {
 		return nil, ErrRoomExists
@@ -46,9 +46,9 @@ func (repo *MongoChatRoomRepository) CreateRoom(ctx context.Context, id string) 
 	}
 
 	// Create a new room if it does not exist
-	newRoom := &structs.ChatRoomEntity{
+	newRoom := &ChatRoomEntity{
 		Id:       id,
-		Messages: []structs.MessageEntity{},
+		Messages: []Message{},
 	}
 
 	_, err = repo.collection.InsertOne(ctx, newRoom)
@@ -58,8 +58,8 @@ func (repo *MongoChatRoomRepository) CreateRoom(ctx context.Context, id string) 
 	return newRoom, nil
 }
 
-func (repo *MongoChatRoomRepository) GetRoom(ctx context.Context, id string) (*structs.ChatRoomEntity, error) {
-	return GetByKey[structs.ChatRoomEntity](ctx, "id", id, repo)
+func (repo *MongoChatRoomRepository) GetRoom(ctx context.Context, id string) (*ChatRoomEntity, error) {
+	return utils.GetByKey[ChatRoomEntity](ctx, "id", id, repo)
 }
 
 func (repo *MongoChatRoomRepository) DeleteRoom(ctx context.Context, id string) error {
@@ -68,7 +68,7 @@ func (repo *MongoChatRoomRepository) DeleteRoom(ctx context.Context, id string) 
 	return err
 }
 
-func (repo *MongoChatRoomRepository) AddMessageToRoom(ctx context.Context, roomId string, message *structs.MessageEntity) error {
+func (repo *MongoChatRoomRepository) AddMessageToRoom(ctx context.Context, roomId string, message *Message) error {
 	filter := bson.M{"id": roomId}
 	update := bson.M{
 		"$push": bson.M{
@@ -90,7 +90,7 @@ func (repo *MongoChatRoomRepository) InsertSeenBy(ctx context.Context, roomId st
 	return err
 }
 
-func (repo *MongoChatRoomRepository) GetMessages(ctx context.Context, roomId string) ([]structs.MessageEntity, error) {
+func (repo *MongoChatRoomRepository) GetMessages(ctx context.Context, roomId string) ([]Message, error) {
 	room, err := repo.GetRoom(ctx, roomId)
 	if err != nil {
 		return nil, err

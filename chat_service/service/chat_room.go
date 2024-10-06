@@ -4,16 +4,16 @@ import (
 	"context"
 	"log"
 
-	"example.com/myproject/structs"
+	"example.com/chat_app/chat_service/repository"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type ChatRoom struct {
 	Id         string
 	Members    map[*Connection]bool
-	Text       chan structs.Message
-	Seen       chan structs.SeenMessage
-	Delete     chan structs.DeleteMessage
+	Text       chan repository.Message
+	Seen       chan repository.SeenMessage
+	Delete     chan repository.DeleteMessage
 	Register   chan *Connection
 	Unregister chan *Connection
 }
@@ -22,9 +22,9 @@ func NewChatRoom(roomId string) *ChatRoom {
 	return &ChatRoom{
 		Id:         roomId,
 		Members:    make(map[*Connection]bool),
-		Text:       make(chan structs.Message),
-		Seen:       make(chan structs.SeenMessage),
-		Delete:     make(chan structs.DeleteMessage),
+		Text:       make(chan repository.Message),
+		Seen:       make(chan repository.SeenMessage),
+		Delete:     make(chan repository.DeleteMessage),
 		Register:   make(chan *Connection),
 		Unregister: make(chan *Connection),
 	}
@@ -46,7 +46,7 @@ func (r *ChatRoom) Run(service *ChatService) {
 				}
 				break
 			}
-			service.mapAndPumpMessages(ctx, conn, messages)
+			service.pumpExistingMessages(ctx, conn, messages)
 			r.Members[conn] = true
 		case conn := <-r.Unregister:
 			log.Printf("Unregistering connection from room %s", r.Id)

@@ -1,4 +1,4 @@
-package structs
+package repository
 
 import (
 	"encoding/json"
@@ -20,23 +20,29 @@ type WsIncomingMessage struct {
 	Data json.RawMessage `json:"data"`
 }
 
+type ChatRoomEntity struct {
+	Id       string    `bson:"id" json:"id"`
+	Messages []Message `bson:"messages" json:"messages"`
+}
+
 type Message struct {
-	Id            string         `json:"id"`
-	Content       string         `json:"content"`
-	EmbeddedMedia *EmbeddedMedia `json:"embeddedMedia"`
-	SentBy        UserDetails    `json:"sentBy"`
-	SentAt        time.Time      `json:"sentAt"`
-	SeenBy        []UserDetails  `json:"seenBy"`
+	Id            string         `bson:"id" json:"id"`
+	Content       string         `bson:"content" json:"content"`
+	EmbeddedMedia *EmbeddedMedia `bson:"embeddedMedia" json:"embeddedMedia"`
+	ChatRoomId    string         `bson:"chatRoomId" json:"chatRoomId"`
+	SentBy        UserDetails    `bson:"sentBy" json:"sentBy"`
+	SentAt        time.Time      `bson:"sentAt" json:"sentAt"`
+	SeenBy        []UserDetails  `bson:"seenBy" json:"seenBy"`
 }
 
 type EmbeddedMedia struct {
-	ContentType string `json:"contentType"`
-	Url         string `json:"url"`
+	ContentType string `bson:"contentType" json:"contentType"`
+	Url         string `bosn:"url" json:"url"`
 }
 
 type UserDetails struct {
-	Id       string `json:"id"`
-	Username string `json:"username"`
+	Id       string `bson:"id" json:"id"`
+	Username string `bson:"username" json:"username"`
 }
 
 type SeenMessage struct {

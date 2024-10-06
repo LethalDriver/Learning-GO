@@ -4,20 +4,20 @@ import (
 	"log"
 	"net/http"
 
-	"example.com/myproject/service"
+	"example.com/chat_app/chat_service/repository"
+	"example.com/chat_app/chat_service/service"
+	"example.com/chat_app/common"
 	"github.com/gorilla/websocket"
 )
 
 type WebsocketHandler struct {
 	upgrader    websocket.Upgrader
 	chatService *service.ChatService
-	userService *service.UserService
 }
 
-func NewWebsocketHandler(rs *service.ChatService, us *service.UserService) *WebsocketHandler {
+func NewWebsocketHandler(rs *service.ChatService) *WebsocketHandler {
 	return &WebsocketHandler{
 		chatService: rs,
-		userService: us,
 		upgrader: websocket.Upgrader{
 			ReadBufferSize:  1024,
 			WriteBufferSize: 1024,
@@ -32,9 +32,21 @@ func (wsh *WebsocketHandler) HandleWebSocketUpgradeRequest(w http.ResponseWriter
 	ctx := r.Context()
 	roomId := r.PathValue("roomId")
 
-	userId, err := service.GetUserIdFromContext(r.Context())
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+	userId, ok := ctx.Value(common.UserIdKey).(string)
+	if !ok {
+		http.Error(w, "User ID not found in context", http.StatusInternalServerError)
+		return
+	}
+
+	username, ok := ctx.Value(common.UsernameKey).(string)
+	if !ok {
+		http.Error(w, "Username not found in context", http.StatusInternalServerError)
+		return
+	}
+
+	user := repository.UserDetails{
+		Id:       userId,
+		Username: username,
 	}
 
 	// Upgrade the HTTP connection to a WebSocket connection
@@ -45,5 +57,5 @@ func (wsh *WebsocketHandler) HandleWebSocketUpgradeRequest(w http.ResponseWriter
 	}
 	log.Println("WebSocket connection upgraded successfully")
 
-	wsh.chatService.ConnectToRoom(ctx, roomId, userId, conn)
+	wsh.chatService.ConnectToRoom(ctx, roomId, user, conn)
 }
