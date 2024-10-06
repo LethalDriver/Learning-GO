@@ -32,12 +32,18 @@ type SeenUpdate struct {
 }
 
 type Message struct {
-	Id      string        `json:"id"`
-	Type    MessageType   `json:"messageType"`
-	Content string        `json:"content"`
-	SentBy  UserDetails   `json:"sentBy"`
-	SentAt  time.Time     `json:"sentAt"`
-	SeenBy  []UserDetails `json:"seenBy"`
+	Id            string         `json:"id"`
+	Type          MessageType    `json:"messageType"`
+	Content       string         `json:"content"`
+	EmbeddedMedia *EmbeddedMedia `json:"embeddedMedia"`
+	SentBy        UserDetails    `json:"sentBy"`
+	SentAt        time.Time      `json:"sentAt"`
+	SeenBy        []UserDetails  `json:"seenBy"`
+}
+
+type EmbeddedMedia struct {
+	ContentType string `json:"contentType"`
+	Url         string `json:"url"`
 }
 
 func (mt MessageType) String() string {

@@ -6,6 +6,7 @@ import (
 	"log"
 	"time"
 
+	"example.com/myproject/mappers"
 	"example.com/myproject/repository"
 	"example.com/myproject/structs"
 	"example.com/myproject/utils"
@@ -72,7 +73,7 @@ func (s *RoomService) CreateRoomEntity(ctx context.Context, roomId string) (*str
 
 func (s *RoomService) mapAndPumpMessages(ctx context.Context, conn *Connection, messageEntities []structs.MessageEntity) {
 	messages := utils.MapSlice(messageEntities, func(entity structs.MessageEntity) structs.Message {
-		message, err := s.MapEntityToMessage(ctx, &entity)
+		message, err := mappers.MapEntityToMessage(ctx, &entity, s.userRepo)
 		if err != nil {
 			log.Printf("Error mapping message entity to message: %v", err)
 		}
@@ -91,59 +92,10 @@ func (s *RoomService) ProcessAndSaveMsg(ctx context.Context, roomId string, mess
 	message.Id = uuid.New().String()
 	message.SentAt = time.Now()
 	message.SeenBy = []structs.UserDetails{}
-	entity := MapMessageToEntity(message, roomId)
+	entity := mappers.MapMessageToEntity(message, roomId)
 	return *message, s.roomRepo.AddMessageToRoom(ctx, roomId, entity)
 }
 
 func (s *RoomService) SaveSeenUpdate(ctx context.Context, roomId string, update *structs.SeenUpdate) error {
 	return s.roomRepo.InsertSeenBy(ctx, roomId, update.MessageId, update.SeenBy.Id)
-}
-
-func MapMessageToEntity(message *structs.Message, chatRoomId string) *structs.MessageEntity {
-	return &structs.MessageEntity{
-		Id:         message.Id,
-		Content:    message.Content,
-		ChatRoomId: chatRoomId,
-		Type:       message.Type.String(),
-		SentBy:     message.SentBy.Id,
-		SentAt:     message.SentAt,
-		SeenBy:     utils.MapSlice(message.SeenBy, func(user structs.UserDetails) string { return user.Id }),
-	}
-}
-
-func (s *RoomService) MapEntityToMessage(ctx context.Context, entity *structs.MessageEntity) (*structs.Message, error) {
-	msgType, err := structs.MessageTypeFromString(entity.Type)
-	if err != nil {
-		log.Printf("Error converting message type: %v", err)
-	}
-
-	sentByEntity, err := s.userRepo.GetById(ctx, entity.SentBy)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get user by id: %w", err)
-	}
-	sentByDetails := structs.UserDetails{
-		Id:       sentByEntity.Id,
-		Username: sentByEntity.Username,
-	}
-
-	seenBy := make([]structs.UserDetails, 0)
-	for _, userId := range entity.SeenBy {
-		user, err := s.userRepo.GetById(ctx, userId)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get seen by: %w", err)
-		}
-		seenBy = append(seenBy, structs.UserDetails{
-			Id:       user.Id,
-			Username: user.Username,
-		})
-	}
-
-	return &structs.Message{
-		Id:      entity.Id,
-		Type:    msgType,
-		Content: entity.Content,
-		SentBy:  sentByDetails,
-		SentAt:  entity.SentAt,
-		SeenBy:  seenBy,
-	}, nil
 }
