@@ -42,7 +42,7 @@ func (r *ChatRoom) Run(service *RoomService) {
 			}
 		case message := <-r.Broadcast:
 			log.Printf("Broadcasting message to room %s: %s", r.Id, string(message.Content))
-			message, err := service.ProcessMessage(ctx, r.Id, &message)
+			message, err := service.ProcessAndSaveMsg(ctx, r.Id, &message)
 			if err != nil {
 				log.Printf("Error saving message %q in room %s", string(message.Content), r.Id)
 				break
@@ -58,7 +58,7 @@ func (r *ChatRoom) Run(service *RoomService) {
 		case seenUpdate := <-r.StatusUpdates:
 			log.Printf("Broadcasting seen update to room %s: %s", r.Id, seenUpdate.MessageId)
 
-			err := service.ProcessSeenUpdate(ctx, r.Id, &seenUpdate)
+			err := service.SaveSeenUpdate(ctx, r.Id, &seenUpdate)
 			if err != nil {
 				log.Printf("Error saving seen update for message %s in room %s", seenUpdate.MessageId, r.Id)
 				break

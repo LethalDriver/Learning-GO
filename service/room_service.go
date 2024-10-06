@@ -48,11 +48,11 @@ func (s *RoomService) GetOrCreateRoom(ctx context.Context, roomId string, conn *
 }
 
 func (s *RoomService) getOrCreateRoomEntity(ctx context.Context, roomId string) (*structs.ChatRoomEntity, error) {
-	roomEntity, err := s.GetRoom(ctx, roomId)
+	roomEntity, err := s.GetRoomEntity(ctx, roomId)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			log.Printf("Room: %s doesn't exist in database, creating new room", roomId)
-			if roomEntity, err = s.CreateRoom(ctx, roomId); err != nil {
+			if roomEntity, err = s.CreateRoomEntity(ctx, roomId); err != nil {
 				return nil, fmt.Errorf("failed to create room: %w", err)
 			}
 			return roomEntity, nil
@@ -60,6 +60,14 @@ func (s *RoomService) getOrCreateRoomEntity(ctx context.Context, roomId string) 
 		return nil, fmt.Errorf("error checking for existence of room in database: %w", err)
 	}
 	return roomEntity, nil
+}
+
+func (s *RoomService) GetRoomEntity(ctx context.Context, roomId string) (*structs.ChatRoomEntity, error) {
+	return s.roomRepo.GetRoom(ctx, roomId)
+}
+
+func (s *RoomService) CreateRoomEntity(ctx context.Context, roomId string) (*structs.ChatRoomEntity, error) {
+	return s.roomRepo.CreateRoom(ctx, roomId)
 }
 
 func (s *RoomService) mapAndPumpMessages(ctx context.Context, conn *Connection, messageEntities []structs.MessageEntity) {
@@ -73,15 +81,13 @@ func (s *RoomService) mapAndPumpMessages(ctx context.Context, conn *Connection, 
 	pumpToNewConnection(conn, messages)
 }
 
-func (s *RoomService) GetRoom(ctx context.Context, roomId string) (*structs.ChatRoomEntity, error) {
-	return s.roomRepo.GetRoom(ctx, roomId)
+func pumpToNewConnection(conn *Connection, messages []structs.Message) {
+	for _, message := range messages {
+		conn.sendMessage <- message
+	}
 }
 
-func (s *RoomService) CreateRoom(ctx context.Context, roomId string) (*structs.ChatRoomEntity, error) {
-	return s.roomRepo.CreateRoom(ctx, roomId)
-}
-
-func (s *RoomService) ProcessMessage(ctx context.Context, roomId string, message *structs.Message) (structs.Message, error) {
+func (s *RoomService) ProcessAndSaveMsg(ctx context.Context, roomId string, message *structs.Message) (structs.Message, error) {
 	message.Id = uuid.New().String()
 	message.SentAt = time.Now()
 	message.SeenBy = []structs.UserDetails{}
@@ -89,7 +95,7 @@ func (s *RoomService) ProcessMessage(ctx context.Context, roomId string, message
 	return *message, s.roomRepo.AddMessageToRoom(ctx, roomId, entity)
 }
 
-func (s *RoomService) ProcessSeenUpdate(ctx context.Context, roomId string, update *structs.SeenUpdate) error {
+func (s *RoomService) SaveSeenUpdate(ctx context.Context, roomId string, update *structs.SeenUpdate) error {
 	return s.roomRepo.InsertSeenBy(ctx, roomId, update.MessageId, update.SeenBy.Id)
 }
 
@@ -140,10 +146,4 @@ func (s *RoomService) MapEntityToMessage(ctx context.Context, entity *structs.Me
 		SentAt:  entity.SentAt,
 		SeenBy:  seenBy,
 	}, nil
-}
-
-func pumpToNewConnection(conn *Connection, messages []structs.Message) {
-	for _, message := range messages {
-		conn.sendMessage <- message
-	}
 }
