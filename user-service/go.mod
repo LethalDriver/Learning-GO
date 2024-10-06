@@ -2,8 +2,6 @@ module example.com/chat_app/user_service
 
 go 1.22.2
 
-require example.com/chat_app/common v0.0.0
-
 require (
 	github.com/golang-jwt/jwt/v5 v5.2.1 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
@@ -20,4 +18,4 @@ require (
 	golang.org/x/text v0.17.0 // indirect
 )
 
-replace example.com/chat_app/common => ../common
+

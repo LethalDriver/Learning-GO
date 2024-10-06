@@ -10,16 +10,46 @@ services:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: example
 
-  web:
-    build: .
-    container_name: chat_app
-    depends_on:
-      - mongodb
+  api-gateway:
+    build:
+      context: .
+      dockerfile: ./api-gateway/Dockerfile
     ports:
       - "8080:8080"
     environment:
-      MONGO_URI: mongodb://root:example@mongodb:27017
-      TOKEN_EXP_HS: 1
+      - PORT=8080
     volumes:
-      - ./private_key.pem:/app/private_key.pem
-      - ./public_key.pem:/app/public_key.pem
+      - ./api_gateway/public_key.pem:/app/public_key.pem
+    depends_on:
+      - user-service
+      - chat-service
+    networks:
+      - chat_app_network
+
+  user-service:
+    build:
+      context: .
+      dockerfile: ./user-service/Dockerfile
+    ports:
+      - "8081:8081"
+    environment:
+      - MONGO_URI=mongodb://root:example@mongodb:27017
+      - PORT=8081
+    networks:
+      - chat_app_network
+
+  chat-service:
+    build:
+      context: .
+      dockerfile: ./chat-service/Dockerfile
+    ports:
+      - "8082:8082"
+    environment:
+      - MONGO_URI=mongodb://root:example@mongodb:27017
+      - PORT=8082
+    networks:
+      - chat_app_network
+
+networks:
+  chat_app_network:
+    driver: bridge

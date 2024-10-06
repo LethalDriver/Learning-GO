@@ -3,9 +3,15 @@ package repository
 import (
 	"context"
 
-	"example.com/chat_app/common/utils"
 	"go.mongodb.org/mongo-driver/mongo"
 )
+
+type UserEntity struct {
+	Id       string `bson:"id" json:"id"`
+	Username string `bson:"username" json:"username"`
+	Email    string `bson:"email" json:"email"`
+	Password string `bson:"password" json:"password"`
+}
 
 type UserRepository interface {
 	GetById(ctx context.Context, id string) (*UserEntity, error)
@@ -27,11 +33,11 @@ func NewMongoUserRepository(client *mongo.Client, dbName, collectionName string)
 }
 
 func (repo *MongoUserRepository) GetById(ctx context.Context, id string) (*UserEntity, error) {
-	return utils.GetByKey[UserEntity](ctx, "id", id, repo)
+	return GetByKey[UserEntity](ctx, "id", id, repo)
 }
 
 func (repo *MongoUserRepository) GetByUsername(ctx context.Context, username string) (*UserEntity, error) {
-	return utils.GetByKey[UserEntity](ctx, "username", username, repo)
+	return GetByKey[UserEntity](ctx, "username", username, repo)
 }
 
 func (repo *MongoUserRepository) Save(ctx context.Context, user *UserEntity) error {

@@ -2,8 +2,6 @@ module example.com/chat_app/chat_service
 
 go 1.22.2
 
-require example.com/chat_app/common v0.0.0
-
 require (
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/uuid v1.6.0 // indirect
@@ -21,4 +19,3 @@ require (
 	golang.org/x/text v0.17.0 // indirect
 )
 
-replace example.com/chat_app/common => ../common

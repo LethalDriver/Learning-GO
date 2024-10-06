@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"os"
 	"time"
 )
 
@@ -15,6 +16,8 @@ func main() {
 		log.Fatalf("Failed to load RSA public key: %v", err)
 	}
 
+	port := os.Getenv("PORT")
+
 	authService := &AuthService{publicKey: publicKey}
 
 	mux := http.NewServeMux()
@@ -23,7 +26,7 @@ func main() {
 	mux.Handle("/chat-service/", JWTMiddleware(authService, http.StripPrefix("/chat-service", proxyHandler("http://chat-service:8082"))))
 
 	server := &http.Server{
-		Addr:         ":8080",
+		Addr:         fmt.Sprintf(":%s", port),
 		Handler:      mux,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,

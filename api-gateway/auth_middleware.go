@@ -9,8 +9,14 @@ import (
 	"os"
 	"strings"
 
-	"example.com/chat_app/common"
 	"github.com/golang-jwt/jwt"
+)
+
+type ContextKey string
+
+const (
+	UserIdKey   ContextKey = "userId"
+	UsernameKey ContextKey = "username"
 )
 
 type AuthService struct {
@@ -52,8 +58,8 @@ func JWTMiddleware(authService *AuthService, next http.Handler) http.Handler {
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), common.UserIdKey, userId)
-		ctx = context.WithValue(ctx, common.UsernameKey, username)
+		ctx := context.WithValue(r.Context(), UserIdKey, userId)
+		ctx = context.WithValue(ctx, UsernameKey, username)
 		r = r.WithContext(ctx)
 
 		// Call the next handler

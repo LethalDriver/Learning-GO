@@ -6,8 +6,14 @@ import (
 
 	"example.com/chat_app/chat_service/repository"
 	"example.com/chat_app/chat_service/service"
-	"example.com/chat_app/common"
 	"github.com/gorilla/websocket"
+)
+
+type ContextKey string
+
+const (
+	UserIdKey   ContextKey = "userId"
+	UsernameKey ContextKey = "username"
 )
 
 type WebsocketHandler struct {
@@ -32,13 +38,13 @@ func (wsh *WebsocketHandler) HandleWebSocketUpgradeRequest(w http.ResponseWriter
 	ctx := r.Context()
 	roomId := r.PathValue("roomId")
 
-	userId, ok := ctx.Value(common.UserIdKey).(string)
+	userId, ok := ctx.Value(UserIdKey).(string)
 	if !ok {
 		http.Error(w, "User ID not found in context", http.StatusInternalServerError)
 		return
 	}
 
-	username, ok := ctx.Value(common.UsernameKey).(string)
+	username, ok := ctx.Value(UsernameKey).(string)
 	if !ok {
 		http.Error(w, "Username not found in context", http.StatusInternalServerError)
 		return

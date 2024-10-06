@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 
-	"example.com/chat_app/common/utils"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -59,7 +58,7 @@ func (repo *MongoChatRoomRepository) CreateRoom(ctx context.Context, id string) 
 }
 
 func (repo *MongoChatRoomRepository) GetRoom(ctx context.Context, id string) (*ChatRoomEntity, error) {
-	return utils.GetByKey[ChatRoomEntity](ctx, "id", id, repo)
+	return GetByKey[ChatRoomEntity](ctx, "id", id, repo)
 }
 
 func (repo *MongoChatRoomRepository) DeleteRoom(ctx context.Context, id string) error {
