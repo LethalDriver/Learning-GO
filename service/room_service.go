@@ -14,39 +14,39 @@ import (
 )
 
 type RoomService struct {
-	roomRepo repository.ChatRoomRepository
-	userRepo repository.UserRepository
+	roomRepo    repository.ChatRoomRepository
+	userRepo    repository.UserRepository
 	roomManager RoomManager
 }
 
 func NewRoomService(roomRepo *repository.MongoChatRoomRepository, userRepo *repository.MongoUserRepository, roomManager RoomManager) *RoomService {
 	return &RoomService{
-		roomRepo: roomRepo,
-		userRepo: userRepo,
+		roomRepo:    roomRepo,
+		userRepo:    userRepo,
 		roomManager: roomManager,
 	}
 }
 
 func (s *RoomService) GetOrCreateRoom(ctx context.Context, roomId string, conn *Connection) (*ChatRoom, error) {
-    roomEntity, err := s.GetRoom(ctx, roomId)
-    if err != nil {
-        // If room doesn't exist in db, create a room in db and proceed
-        if err == mongo.ErrNoDocuments {
-            log.Printf("Room: %s doesn't exist in database, creating new room", roomId)
-            if _, err := s.CreateRoom(ctx, roomId); err != nil {
-                return nil, fmt.Errorf("failed to create room: %w", err)
-            }
-        } else {
-            return nil, fmt.Errorf("error checking for existence of room in database: %w", err)
-        }
-    }
+	roomEntity, err := s.GetRoom(ctx, roomId)
+	if err != nil {
+		// If room doesn't exist in db, create a room in db and proceed
+		if err == mongo.ErrNoDocuments {
+			log.Printf("Room: %s doesn't exist in database, creating new room", roomId)
+			if _, err := s.CreateRoom(ctx, roomId); err != nil {
+				return nil, fmt.Errorf("failed to create room: %w", err)
+			}
+		} else {
+			return nil, fmt.Errorf("error checking for existence of room in database: %w", err)
+		}
+	}
 	room := s.roomManager.ManageRoom(roomId)
 	go room.Run(s)
 
-    log.Printf("Registering connection for user %s", conn.user.Id)
-    room.Register <- conn
+	log.Printf("Registering connection for user %s", conn.user.Id)
+	room.Register <- conn
 
-    if roomEntity != nil {
+	if roomEntity != nil {
 		go func() {
 			messages := make([]structs.Message, 0)
 			for _, msgEntity := range roomEntity.Messages {
@@ -60,9 +60,9 @@ func (s *RoomService) GetOrCreateRoom(ctx context.Context, roomId string, conn *
 			pumpExistingMessagesToNewConnection(conn, messages)
 		}()
 	}
-    log.Printf("Room: %s running", roomId)
+	log.Printf("Room: %s running", roomId)
 
-    return room, nil
+	return room, nil
 }
 
 func (s *RoomService) GetRoom(ctx context.Context, roomId string) (*structs.ChatRoomEntity, error) {
@@ -73,12 +73,12 @@ func (s *RoomService) CreateRoom(ctx context.Context, roomId string) (*structs.C
 	return s.roomRepo.CreateRoom(ctx, roomId)
 }
 
-func (s *RoomService) ProcessMessage(ctx context.Context, roomId string, message *structs.Message) (string, error) {
+func (s *RoomService) ProcessMessage(ctx context.Context, roomId string, message *structs.Message) (structs.Message, error) {
 	message.Id = uuid.New().String()
 	message.SentAt = time.Now()
 	message.SeenBy = []structs.UserDetails{}
 	entity := MapMessageToEntity(message, roomId)
-	return entity.Id, s.roomRepo.AddMessageToRoom(ctx, roomId, entity)
+	return *message, s.roomRepo.AddMessageToRoom(ctx, roomId, entity)
 }
 
 func (s *RoomService) ProcessSeenUpdate(ctx context.Context, roomId string, update *structs.SeenUpdate) error {
@@ -87,13 +87,13 @@ func (s *RoomService) ProcessSeenUpdate(ctx context.Context, roomId string, upda
 
 func MapMessageToEntity(message *structs.Message, chatRoomId string) *structs.MessageEntity {
 	return &structs.MessageEntity{
-		Id:      message.Id,
-		Content: message.Content,
+		Id:         message.Id,
+		Content:    message.Content,
 		ChatRoomId: chatRoomId,
-		Type:    message.Type.String(),
-		SentBy:  message.SentBy.Id,
-		SentAt:  message.SentAt,
-		SeenBy:  utils.MapSlice(message.SeenBy, func(user structs.UserDetails) string { return user.Id }),
+		Type:       message.Type.String(),
+		SentBy:     message.SentBy.Id,
+		SentAt:     message.SentAt,
+		SeenBy:     utils.MapSlice(message.SeenBy, func(user structs.UserDetails) string { return user.Id }),
 	}
 }
 
@@ -130,14 +130,12 @@ func (s *RoomService) MapEntityToMessage(ctx context.Context, entity *structs.Me
 		Content: entity.Content,
 		SentBy:  sentByDetails,
 		SentAt:  entity.SentAt,
-		SeenBy: seenBy,
+		SeenBy:  seenBy,
 	}, nil
 }
 
 func pumpExistingMessagesToNewConnection(conn *Connection, messages []structs.Message) {
-    for _, message := range messages {
-        conn.sendMessage <- message
-    }
+	for _, message := range messages {
+		conn.sendMessage <- message
+	}
 }
-
-

@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"time"
 )
+
 type DataType int
+
 const (
 	MessageWithContent DataType = iota
 	StatusUpdate
@@ -25,17 +27,17 @@ type UserDetails struct {
 }
 
 type SeenUpdate struct {
-	MessageId string `json:"messageId"`
-	SeenBy UserDetails `json:"seenBy"`
+	MessageId string      `json:"messageId"`
+	SeenBy    UserDetails `json:"seenBy"`
 }
 
 type Message struct {
-	Id     string      `json:"id"`
-	Type MessageType `json:"messageType"`
-	Content string `json:"content"`
-	SentBy UserDetails `json:"sentBy"`
-	SentAt time.Time `json:"sentAt"`
-	SeenBy []UserDetails `json:"seenBy"`
+	Id      string        `json:"id"`
+	Type    MessageType   `json:"messageType"`
+	Content string        `json:"content"`
+	SentBy  UserDetails   `json:"sentBy"`
+	SentAt  time.Time     `json:"sentAt"`
+	SeenBy  []UserDetails `json:"seenBy"`
 }
 
 func (mt MessageType) String() string {
@@ -61,39 +63,39 @@ func MessageTypeFromString(s string) (MessageType, error) {
 }
 
 func (mt MessageType) MarshalJSON() ([]byte, error) {
-    return json.Marshal(mt.String())
+	return json.Marshal(mt.String())
 }
 
 func (mt *MessageType) UnmarshalJSON(data []byte) error {
-    var s string
-    if err := json.Unmarshal(data, &s); err != nil {
-        return err
-    }
+	var s string
+	if err := json.Unmarshal(data, &s); err != nil {
+		return err
+	}
 
-    switch s {
-    case "TextMessage":
-        *mt = TextMessage
-    case "ImageMessage":
-        *mt = ImageMessage
-    default:
-        return errors.New("invalid MessageType")
-    }
+	switch s {
+	case "TextMessage":
+		*mt = TextMessage
+	case "ImageMessage":
+		*mt = ImageMessage
+	default:
+		return errors.New("invalid MessageType")
+	}
 
-    return nil
+	return nil
 }
 
 func DetermineDataType(messageBytes []byte) (DataType, error) {
-    var temp map[string]any
-    err := json.Unmarshal(messageBytes, &temp)
-    if err != nil {
-        return -1, err
-    }
+	var temp map[string]any
+	err := json.Unmarshal(messageBytes, &temp)
+	if err != nil {
+		return -1, err
+	}
 
-    if _, ok := temp["messageId"]; ok {
-        return StatusUpdate, nil
-    } else if _, ok := temp["id"]; ok {
-        return MessageWithContent, nil
-    } else {
-        return -1, errors.New("unknown message type")
-    }
+	if _, ok := temp["messageId"]; ok {
+		return StatusUpdate, nil
+	} else if _, ok := temp["id"]; ok {
+		return MessageWithContent, nil
+	} else {
+		return -1, errors.New("unknown message type")
+	}
 }
