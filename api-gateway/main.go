@@ -22,7 +22,7 @@ func main() {
 
 	mux := http.NewServeMux()
 
-	mux.Handle("/user-service/", JWTMiddleware(authService, http.StripPrefix("/user-service", proxyHandler("http://user-service:8081"))))
+	mux.Handle("/user-service/", http.StripPrefix("/user-service", proxyHandler("http://user-service:8081")))
 	mux.Handle("/chat-service/", JWTMiddleware(authService, http.StripPrefix("/chat-service", proxyHandler("http://chat-service:8082"))))
 
 	server := &http.Server{
