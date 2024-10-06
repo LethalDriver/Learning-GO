@@ -17,7 +17,7 @@ type Connection struct {
 	room           *ChatRoom
 }
 
-func HandleConnection(ws *websocket.Conn, room *ChatRoom, user structs.UserDetails) error {
+func handleConnection(ws *websocket.Conn, room *ChatRoom, user structs.UserDetails) error {
 	clientIP := ws.RemoteAddr().String()
 	log.Printf("Handling connection from %s", clientIP)
 
@@ -42,6 +42,7 @@ func HandleConnection(ws *websocket.Conn, room *ChatRoom, user structs.UserDetai
 		conn.readPump()
 	}()
 
+	room.Register <- conn
 	wg.Wait()
 	room.Unregister <- conn
 	log.Printf("Connection %s unregistered from room ID: %s", clientIP, room.Id)
