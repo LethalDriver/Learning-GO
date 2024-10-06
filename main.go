@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"os"
 
 	"example.com/myproject/api/handler"
 	"example.com/myproject/repository"
@@ -14,12 +15,12 @@ import (
 )
 
 func main() {
-	err := godotenv.Load(".env")
-	if err != nil {
-		log.Fatalf("failed loading env variables from .env: %v", err)
+	if err := godotenv.Load(); err != nil {
+		log.Println("No .env file found, assuming variables set at system level")
 	}
 
-	mongoClientOption := options.Client().ApplyURI("mongodb://localhost:27017")
+	mongoUri := os.Getenv("MONGO_URI")
+	mongoClientOption := options.Client().ApplyURI(mongoUri)
 
 	client, err := mongo.Connect(context.TODO(), mongoClientOption)
 	if err != nil {

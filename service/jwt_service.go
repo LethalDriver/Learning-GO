@@ -28,15 +28,15 @@ type AuthService struct {
 // The public key is read from the RSA_PUBLIC_KEY environment variable.
 func NewAuthService() (*AuthService, error) {
 	// Read the expiration time from the environment variable
-	expirationTimeString := os.Getenv("TOKEN_EXPIRATION_HS")
+	expirationTimeString := os.Getenv("TOKEN_EXP_HS")
 	if expirationTimeString == "" {
-		return nil, errors.New("TOKEN_EXPIRATION_HS env variable not set")
+		return nil, errors.New("TOKEN_EXP_HS env variable not set")
 	}
 
 	// Parse the expiration time from string to integer
 	expirationTimeHs, err := strconv.Atoi(expirationTimeString)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse TOKEN_EXPIRATION_HS: %v", err)
+		return nil, fmt.Errorf("failed to parse TOKEN_EXP_HS: %v", err)
 	}
 
 	// Get the RSA private key
@@ -104,7 +104,6 @@ func (s *AuthService) ValidateTokenWithClaims(tokenString string) (jwt.MapClaims
 	return nil, errors.New("failed to extract claims")
 }
 
-
 // getRsaPublicKey reads the RSA public key from the environment variable.
 // It parses the RSA public key and returns the parsed public key.
 func getRsaPublicKey() (*rsa.PublicKey, error) {
@@ -136,30 +135,31 @@ func getRsaPrivateKey() (*rsa.PrivateKey, error) {
 }
 
 type contextKey string
+
 const userIdKey contextKey = "userId"
 
 // AuthMiddleware is the authorization middleware
 func AuthMiddleware(jwtService *AuthService, next http.Handler) http.Handler {
-    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-        authHeader := r.Header.Get("Authorization")
-        if authHeader == "" {
-            http.Error(w, "Authorization header missing", http.StatusUnauthorized)
-            return
-        }
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		authHeader := r.Header.Get("Authorization")
+		if authHeader == "" {
+			http.Error(w, "Authorization header missing", http.StatusUnauthorized)
+			return
+		}
 
-        // Extract the token from the "Bearer <token>" format
-        tokenString := strings.TrimPrefix(authHeader, "Bearer ")
-        if tokenString == authHeader {
-            http.Error(w, "Invalid authorization header format", http.StatusUnauthorized)
-            return
-        }
+		// Extract the token from the "Bearer <token>" format
+		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+		if tokenString == authHeader {
+			http.Error(w, "Invalid authorization header format", http.StatusUnauthorized)
+			return
+		}
 
-        // Validate the token
-        claims, err := jwtService.ValidateTokenWithClaims(tokenString)
-        if err != nil {
-            http.Error(w, fmt.Sprintf("Invalid token: %v", err), http.StatusUnauthorized)
-            return
-        }
+		// Validate the token
+		claims, err := jwtService.ValidateTokenWithClaims(tokenString)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Invalid token: %v", err), http.StatusUnauthorized)
+			return
+		}
 
 		userId, ok := claims["userId"].(string)
 		if !ok {
@@ -170,9 +170,9 @@ func AuthMiddleware(jwtService *AuthService, next http.Handler) http.Handler {
 		ctx := context.WithValue(r.Context(), userIdKey, userId)
 		r = r.WithContext(ctx)
 
-        // Call the next handler
-        next.ServeHTTP(w, r)
-    })
+		// Call the next handler
+		next.ServeHTTP(w, r)
+	})
 }
 
 func GetUserIdFromContext(ctx context.Context) (string, error) {
@@ -182,5 +182,3 @@ func GetUserIdFromContext(ctx context.Context) (string, error) {
 	}
 	return userId, nil
 }
-
-
