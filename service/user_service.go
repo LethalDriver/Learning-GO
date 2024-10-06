@@ -47,7 +47,7 @@ func (s *UserService) GetUser(ctx context.Context, username string) (*structs.Us
 		if err == mongo.ErrNoDocuments {
 			return nil, ErrNoUser
 		}
-		return nil, errors.New("unknown error while getting user")
+		return nil, fmt.Errorf("error getting user %q: %w", username, err)
 	}
 	return user, nil
 }
@@ -58,7 +58,7 @@ func (s *UserService) GetUserById(ctx context.Context, id string) (*structs.User
 		if err == mongo.ErrNoDocuments {
 			return nil, ErrNoUser
 		}
-		return nil, errors.New("unknown error while getting user")
+		return nil, fmt.Errorf("error getting user %q: %w", id, err)
 	}
 	return user, nil
 }
