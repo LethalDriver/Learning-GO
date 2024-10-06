@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"example.com/chat_app/common"
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -134,13 +135,6 @@ func getRsaPrivateKey() (*rsa.PrivateKey, error) {
 	return privateKey, nil
 }
 
-type contextKey string
-
-const (
-	userIdKey   contextKey = "userId"
-	usernameKey contextKey = "username"
-)
-
 // AuthMiddleware is the authorization middleware
 func AuthMiddleware(jwtService *AuthService, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -176,19 +170,11 @@ func AuthMiddleware(jwtService *AuthService, next http.Handler) http.Handler {
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), userIdKey, userId)
-		ctx = context.WithValue(ctx, usernameKey, username)
+		ctx := context.WithValue(r.Context(), common.UserIdKey, userId)
+		ctx = context.WithValue(ctx, common.UsernameKey, username)
 		r = r.WithContext(ctx)
 
 		// Call the next handler
 		next.ServeHTTP(w, r)
 	})
-}
-
-func GetUserIdFromContext(ctx context.Context) (string, error) {
-	userId, ok := ctx.Value(userIdKey).(string)
-	if !ok {
-		return "", fmt.Errorf("user id not found in context")
-	}
-	return userId, nil
 }
