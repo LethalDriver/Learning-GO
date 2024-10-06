@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"crypto/rsa"
 	"errors"
 	"fmt"
@@ -58,9 +57,8 @@ func JWTMiddleware(authService *AuthService, next http.Handler) http.Handler {
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), UserIdKey, userId)
-		ctx = context.WithValue(ctx, UsernameKey, username)
-		r = r.WithContext(ctx)
+		r.Header.Set("X-User-Id", userId)
+		r.Header.Set("X-Username", username)
 
 		// Call the next handler
 		next.ServeHTTP(w, r)

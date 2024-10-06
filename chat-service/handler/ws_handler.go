@@ -38,17 +38,8 @@ func (wsh *WebsocketHandler) HandleWebSocketUpgradeRequest(w http.ResponseWriter
 	ctx := r.Context()
 	roomId := r.PathValue("roomId")
 
-	userId, ok := ctx.Value(UserIdKey).(string)
-	if !ok {
-		http.Error(w, "User ID not found in context", http.StatusInternalServerError)
-		return
-	}
-
-	username, ok := ctx.Value(UsernameKey).(string)
-	if !ok {
-		http.Error(w, "Username not found in context", http.StatusInternalServerError)
-		return
-	}
+	userId := r.Header.Get("X-User-Id")
+	username := r.Header.Get("X-Username")
 
 	user := repository.UserDetails{
 		Id:       userId,
