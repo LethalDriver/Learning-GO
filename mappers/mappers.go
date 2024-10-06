@@ -58,3 +58,10 @@ func MapEntityToMessage(ctx context.Context, entity *structs.MessageEntity, user
 		SeenBy:  seenBy,
 	}, nil
 }
+
+func MapEntityToUserDetails(entity *structs.UserEntity) structs.UserDetails {
+	return structs.UserDetails{
+		Id:       entity.Id,
+		Username: entity.Username,
+	}
+}
