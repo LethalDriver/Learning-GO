@@ -35,7 +35,7 @@ func main() {
 
 	userRepo := repository.NewMongoUserRepository(client, "chatdb", "users")
 
-	authService, err := service.NewAuthService()
+	authService, err := service.NewJwtService()
 	if err != nil {
 		log.Fatalf("Failed launching jwt sevice: %v", err)
 	}
