@@ -12,7 +12,7 @@ type ChatRoom struct {
 	Id            string
 	Members       map[*Connection]bool
 	Broadcast     chan structs.Message
-	StatusUpdates chan structs.SeenUpdate
+	StatusUpdates chan structs.SeenMessage
 	Register      chan *Connection
 	Unregister    chan *Connection
 }
@@ -22,7 +22,7 @@ func NewChatRoom(roomId string) *ChatRoom {
 		Id:            roomId,
 		Members:       make(map[*Connection]bool),
 		Broadcast:     make(chan structs.Message),
-		StatusUpdates: make(chan structs.SeenUpdate),
+		StatusUpdates: make(chan structs.SeenMessage),
 		Register:      make(chan *Connection),
 		Unregister:    make(chan *Connection),
 	}

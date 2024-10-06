@@ -7,33 +7,21 @@ import (
 	"time"
 )
 
-type DataType int
-
-const (
-	MessageWithContent DataType = iota
-	StatusUpdate
-)
-
 type MessageType int
 
 const (
-	TextMessage MessageType = iota
-	ImageMessage
+	TypeTextMessage MessageType = iota
+	TypeSeenMessage
+	TypeDeleteMessage
 )
 
-type UserDetails struct {
-	Id       string `json:"id"`
-	Username string `json:"username"`
-}
-
-type SeenUpdate struct {
-	MessageId string      `json:"messageId"`
-	SeenBy    UserDetails `json:"seenBy"`
+type WsIncomingMessage struct {
+	Type MessageType `json:"type"`
+	Data any         `json:"data"`
 }
 
 type Message struct {
 	Id            string         `json:"id"`
-	Type          MessageType    `json:"messageType"`
 	Content       string         `json:"content"`
 	EmbeddedMedia *EmbeddedMedia `json:"embeddedMedia"`
 	SentBy        UserDetails    `json:"sentBy"`
@@ -46,12 +34,29 @@ type EmbeddedMedia struct {
 	Url         string `json:"url"`
 }
 
+type UserDetails struct {
+	Id       string `json:"id"`
+	Username string `json:"username"`
+}
+
+type SeenMessage struct {
+	MessageId string      `json:"messageId"`
+	SeenBy    UserDetails `json:"seenBy"`
+}
+
+type DeleteMessage struct {
+	MessageId string `json:"messageId"`
+	SentBy    string `json:"sentBy"`
+}
+
 func (mt MessageType) String() string {
 	switch mt {
-	case TextMessage:
+	case TypeTextMessage:
 		return "TextMessage"
-	case ImageMessage:
-		return "ImageMessage"
+	case TypeSeenMessage:
+		return "SeenMessage"
+	case TypeDeleteMessage:
+		return "DeleteMessage"
 	default:
 		return "Unknown"
 	}
@@ -60,9 +65,11 @@ func (mt MessageType) String() string {
 func MessageTypeFromString(s string) (MessageType, error) {
 	switch s {
 	case "TextMessage":
-		return TextMessage, nil
-	case "ImageMessage":
-		return ImageMessage, nil
+		return TypeTextMessage, nil
+	case "SeenMessage":
+		return TypeSeenMessage, nil
+	case "DeleteMessage":
+		return TypeDeleteMessage, nil
 	default:
 		return -1, fmt.Errorf("unknown message type: %s", s)
 	}
@@ -80,9 +87,11 @@ func (mt *MessageType) UnmarshalJSON(data []byte) error {
 
 	switch s {
 	case "TextMessage":
-		*mt = TextMessage
-	case "ImageMessage":
-		*mt = ImageMessage
+		*mt = TypeTextMessage
+	case "SeenMessage":
+		*mt = TypeSeenMessage
+	case "DeleteMessage":
+		*mt = TypeDeleteMessage
 	default:
 		return errors.New("invalid MessageType")
 	}
@@ -90,18 +99,20 @@ func (mt *MessageType) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func DetermineDataType(messageBytes []byte) (DataType, error) {
-	var temp map[string]any
-	err := json.Unmarshal(messageBytes, &temp)
+func DetermineMessageType(messageBytes []byte) (MessageType, error) {
+	var msg WsIncomingMessage
+	err := json.Unmarshal(messageBytes, &msg)
 	if err != nil {
 		return -1, err
 	}
-
-	if _, ok := temp["messageId"]; ok {
-		return StatusUpdate, nil
-	} else if _, ok := temp["id"]; ok {
-		return MessageWithContent, nil
-	} else {
+	switch msg.Type {
+	case TypeTextMessage:
+		return TypeTextMessage, nil
+	case TypeSeenMessage:
+		return TypeSeenMessage, nil
+	case TypeDeleteMessage:
+		return TypeDeleteMessage, nil
+	default:
 		return -1, errors.New("unknown message type")
 	}
 }

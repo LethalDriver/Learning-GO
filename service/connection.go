@@ -13,7 +13,7 @@ type Connection struct {
 	ws             *websocket.Conn
 	user           structs.UserDetails
 	sendMessage    chan structs.Message
-	sendSeenUpdate chan structs.SeenUpdate
+	sendSeenUpdate chan structs.SeenMessage
 	room           *ChatRoom
 }
 
@@ -25,7 +25,7 @@ func handleConnection(ws *websocket.Conn, room *ChatRoom, user structs.UserDetai
 		ws:             ws,
 		user:           user,
 		sendMessage:    make(chan structs.Message, 256),
-		sendSeenUpdate: make(chan structs.SeenUpdate, 256),
+		sendSeenUpdate: make(chan structs.SeenMessage, 256),
 		room:           room,
 	}
 
@@ -61,15 +61,15 @@ func (c *Connection) readPump() {
 		}
 		log.Printf("Read message from connection: %q, address: %p", string(messageBytes), c)
 
-		messageType, err := structs.DetermineDataType(messageBytes)
+		messageType, err := structs.DetermineMessageType(messageBytes)
 		if err != nil {
 			log.Printf("Error determining message type: %v", err)
 			break
 		}
 
 		switch messageType {
-		case structs.StatusUpdate:
-			var seenUpdate structs.SeenUpdate
+		case structs.TypeSeenMessage:
+			var seenUpdate structs.SeenMessage
 			if err := c.unmarshalMessage(messageBytes, &seenUpdate); err != nil {
 				break
 			}
@@ -77,7 +77,7 @@ func (c *Connection) readPump() {
 			log.Printf("Received SeenUpdate: %+v", seenUpdate)
 			c.room.StatusUpdates <- seenUpdate
 
-		case structs.MessageWithContent:
+		case structs.TypeTextMessage:
 			var msg structs.Message
 			if err := c.unmarshalMessage(messageBytes, &msg); err != nil {
 				break
@@ -85,6 +85,9 @@ func (c *Connection) readPump() {
 			msg.SentBy = c.user
 			c.room.Broadcast <- msg
 			log.Printf("Received Message: %+v", msg)
+
+		case structs.TypeDeleteMessage:
+			//TODO
 
 		default:
 			log.Printf("Unknown message type: %q", string(messageBytes))

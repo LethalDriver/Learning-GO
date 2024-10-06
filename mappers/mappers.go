@@ -3,7 +3,6 @@ package mappers
 import (
 	"context"
 	"fmt"
-	"log"
 
 	"example.com/myproject/repository"
 	"example.com/myproject/structs"
@@ -15,7 +14,6 @@ func MapMessageToEntity(message *structs.Message, chatRoomId string) *structs.Me
 		Id:         message.Id,
 		Content:    message.Content,
 		ChatRoomId: chatRoomId,
-		Type:       message.Type.String(),
 		SentBy:     message.SentBy.Id,
 		SentAt:     message.SentAt,
 		SeenBy:     utils.MapSlice(message.SeenBy, func(user structs.UserDetails) string { return user.Id }),
@@ -23,11 +21,6 @@ func MapMessageToEntity(message *structs.Message, chatRoomId string) *structs.Me
 }
 
 func MapEntityToMessage(ctx context.Context, entity *structs.MessageEntity, userRepo repository.UserRepository) (*structs.Message, error) {
-	msgType, err := structs.MessageTypeFromString(entity.Type)
-	if err != nil {
-		log.Printf("Error converting message type: %v", err)
-	}
-
 	sentByEntity, err := userRepo.GetById(ctx, entity.SentBy)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user by id: %w", err)
@@ -51,7 +44,6 @@ func MapEntityToMessage(ctx context.Context, entity *structs.MessageEntity, user
 
 	return &structs.Message{
 		Id:      entity.Id,
-		Type:    msgType,
 		Content: entity.Content,
 		SentBy:  sentByDetails,
 		SentAt:  entity.SentAt,
