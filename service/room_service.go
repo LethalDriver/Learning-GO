@@ -28,18 +28,11 @@ func NewRoomService(roomRepo *repository.MongoChatRoomRepository, userRepo *repo
 }
 
 func (s *RoomService) GetOrCreateRoom(ctx context.Context, roomId string, conn *Connection) (*ChatRoom, error) {
-	roomEntity, err := s.GetRoom(ctx, roomId)
+	roomEntity, err := s.getOrCreateRoomEntity(ctx, roomId)
 	if err != nil {
-		// If room doesn't exist in db, create a room in db and proceed
-		if err == mongo.ErrNoDocuments {
-			log.Printf("Room: %s doesn't exist in database, creating new room", roomId)
-			if _, err := s.CreateRoom(ctx, roomId); err != nil {
-				return nil, fmt.Errorf("failed to create room: %w", err)
-			}
-		} else {
-			return nil, fmt.Errorf("error checking for existence of room in database: %w", err)
-		}
+		return nil, err
 	}
+
 	room := s.roomManager.ManageRoom(roomId)
 	go room.Run(s)
 
@@ -47,22 +40,37 @@ func (s *RoomService) GetOrCreateRoom(ctx context.Context, roomId string, conn *
 	room.Register <- conn
 
 	if roomEntity != nil {
-		go func() {
-			messages := make([]structs.Message, 0)
-			for _, msgEntity := range roomEntity.Messages {
-				message, err := s.MapEntityToMessage(ctx, &msgEntity)
-				if err != nil {
-					log.Printf("Error mapping message entity to message: %v", err)
-					return
-				}
-				messages = append(messages, *message)
-			}
-			pumpExistingMessagesToNewConnection(conn, messages)
-		}()
+		go s.mapAndPumpMessages(ctx, conn, roomEntity.Messages)
 	}
-	log.Printf("Room: %s running", roomId)
 
+	log.Printf("Room: %s running", roomId)
 	return room, nil
+}
+
+func (s *RoomService) getOrCreateRoomEntity(ctx context.Context, roomId string) (*structs.ChatRoomEntity, error) {
+	roomEntity, err := s.GetRoom(ctx, roomId)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			log.Printf("Room: %s doesn't exist in database, creating new room", roomId)
+			if roomEntity, err = s.CreateRoom(ctx, roomId); err != nil {
+				return nil, fmt.Errorf("failed to create room: %w", err)
+			}
+			return roomEntity, nil
+		}
+		return nil, fmt.Errorf("error checking for existence of room in database: %w", err)
+	}
+	return roomEntity, nil
+}
+
+func (s *RoomService) mapAndPumpMessages(ctx context.Context, conn *Connection, messageEntities []structs.MessageEntity) {
+	messages := utils.MapSlice(messageEntities, func(entity structs.MessageEntity) structs.Message {
+		message, err := s.MapEntityToMessage(ctx, &entity)
+		if err != nil {
+			log.Printf("Error mapping message entity to message: %v", err)
+		}
+		return *message
+	})
+	pumpToNewConnection(conn, messages)
 }
 
 func (s *RoomService) GetRoom(ctx context.Context, roomId string) (*structs.ChatRoomEntity, error) {
@@ -134,7 +142,7 @@ func (s *RoomService) MapEntityToMessage(ctx context.Context, entity *structs.Me
 	}, nil
 }
 
-func pumpExistingMessagesToNewConnection(conn *Connection, messages []structs.Message) {
+func pumpToNewConnection(conn *Connection, messages []structs.Message) {
 	for _, message := range messages {
 		conn.sendMessage <- message
 	}
