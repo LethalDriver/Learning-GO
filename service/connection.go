@@ -96,6 +96,7 @@ func (c *Connection) readPump() {
 				log.Printf("Error unmarshalling delete message: %v", err)
 				break
 			}
+			deleteMessage.SentBy = c.user
 			log.Printf("Received DeleteMessage: %+v", deleteMessage)
 			c.room.Delete <- deleteMessage
 
