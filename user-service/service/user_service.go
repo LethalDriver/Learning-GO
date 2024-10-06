@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"example.com/chat_app/user_service/repository"
+	"github.com/google/uuid"
 
 	"go.mongodb.org/mongo-driver/mongo"
 	"golang.org/x/crypto/bcrypt"
@@ -79,6 +80,7 @@ func (s *UserService) RegisterUser(ctx context.Context, r RegistrationRequest) (
 	}
 
 	user := &repository.UserEntity{
+		Id:       uuid.New().String(),
 		Username: r.Username,
 		Email:    r.Email,
 		Password: string(hashedPassword),
