@@ -5,28 +5,27 @@ import (
 	"errors"
 	"fmt"
 
-	"example.com/myproject/repository"
-	"example.com/myproject/structs"
+	"example.com/chat_app/user_service/repository"
 
 	"go.mongodb.org/mongo-driver/mongo"
 	"golang.org/x/crypto/bcrypt"
 )
 
 var (
-	ErrNoUser = errors.New("user doesn't exist")
+	ErrNoUser        = errors.New("user doesn't exist")
 	ErrWrongPassword = errors.New("incorrect password")
-	ErrUserExists = errors.New("user already exists")
+	ErrUserExists    = errors.New("user already exists")
 )
 
 type UserService struct {
-	repo      repository.UserRepository
-	jwt *AuthService
+	repo repository.UserRepository
+	jwt  *AuthService
 }
 
 func NewUserService(repo repository.UserRepository, jwt *AuthService) *UserService {
 	return &UserService{
 		repo: repo,
-		jwt: jwt,
+		jwt:  jwt,
 	}
 }
 
@@ -41,7 +40,7 @@ type LoginRequest struct {
 	Password string `json:"password"`
 }
 
-func (s *UserService) GetUser(ctx context.Context, username string) (*structs.UserEntity, error) {
+func (s *UserService) GetUser(ctx context.Context, username string) (*repository.UserEntity, error) {
 	user, err := s.repo.GetByUsername(ctx, username)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
@@ -52,7 +51,7 @@ func (s *UserService) GetUser(ctx context.Context, username string) (*structs.Us
 	return user, nil
 }
 
-func (s *UserService) GetUserById(ctx context.Context, id string) (*structs.UserEntity, error) {
+func (s *UserService) GetUserById(ctx context.Context, id string) (*repository.UserEntity, error) {
 	user, err := s.repo.GetById(ctx, id)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
@@ -79,7 +78,7 @@ func (s *UserService) RegisterUser(ctx context.Context, r RegistrationRequest) (
 		return "", fmt.Errorf("failed hashing password: %w", err)
 	}
 
-	user := &structs.UserEntity{
+	user := &repository.UserEntity{
 		Username: r.Username,
 		Email:    r.Email,
 		Password: string(hashedPassword),
@@ -93,7 +92,7 @@ func (s *UserService) RegisterUser(ctx context.Context, r RegistrationRequest) (
 	if err != nil {
 		return "", fmt.Errorf("failed generating jwt token: %w", err)
 	}
-	
+
 	return token, nil
 }
 
@@ -116,7 +115,7 @@ func (s *UserService) LoginUser(ctx context.Context, r LoginRequest) (string, er
 		return "", fmt.Errorf("failed generating jwt token: %w", err)
 	}
 
-	return token, nil 
+	return token, nil
 }
 
 func (s *UserService) validateRegistrationRequest(r RegistrationRequest) error {

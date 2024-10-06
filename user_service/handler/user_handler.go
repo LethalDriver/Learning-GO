@@ -4,7 +4,8 @@ import (
 	"log"
 	"net/http"
 
-	"example.com/myproject/service"
+	"example.com/chat_app/common/utils"
+	"example.com/chat_app/user_service/service"
 )
 
 type UserHandler struct {
@@ -25,7 +26,7 @@ func (h *UserHandler) HandleRegister(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	var regReq service.RegistrationRequest
-	err := parseRequest(r, &regReq)
+	err := utils.ParseRequest(r, &regReq)
 	if err != nil {
 		log.Printf("Failed registering user %q: %v", regReq.Username, err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
@@ -45,7 +46,7 @@ func (h *UserHandler) HandleRegister(w http.ResponseWriter, r *http.Request) {
 	resp := &TokenResponse{
 		AccessToken: token,
 	}
-	err = writeResponse(w, resp)
+	err = utils.WriteResponse(w, resp)
 	if err != nil {
 		log.Printf("Failed registering user %q: %v", regReq.Username, err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
@@ -56,7 +57,7 @@ func (h *UserHandler) HandleRegister(w http.ResponseWriter, r *http.Request) {
 func (h *UserHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	var logReq service.LoginRequest
-	err := parseRequest(r, &logReq)
+	err := utils.ParseRequest(r, &logReq)
 	if err != nil {
 		log.Printf("Failed parsing login request: %v", err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
@@ -79,7 +80,7 @@ func (h *UserHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 	resp := &TokenResponse{
 		AccessToken: token,
 	}
-	err = writeResponse(w, resp)
+	err = utils.WriteResponse(w, resp)
 	if err != nil {
 		log.Printf("Failed writing login response: %v", err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
