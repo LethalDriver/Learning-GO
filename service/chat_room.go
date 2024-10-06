@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"example.com/myproject/structs"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type ChatRoom struct {
@@ -27,12 +28,23 @@ func NewChatRoom(roomId string) *ChatRoom {
 	}
 }
 
-func (r *ChatRoom) Run(service *RoomService) {
+func (r *ChatRoom) Run(service *ChatService) {
 	ctx := context.Background()
 	for {
 		select {
 		case conn := <-r.Register:
 			log.Printf("Registering connection to room %s, address: %p", r.Id, conn)
+			messages, err := service.roomRepo.GetMessages(ctx, r.Id)
+			if err != nil {
+				if err == mongo.ErrNoDocuments {
+					log.Printf("No messages found for room %s", r.Id)
+
+				} else {
+					log.Printf("Error getting messages for room %s: %v", r.Id, err)
+				}
+				break
+			}
+			service.mapAndPumpMessages(ctx, conn, messages)
 			r.Members[conn] = true
 		case conn := <-r.Unregister:
 			log.Printf("Unregistering connection from room %s", r.Id)
@@ -42,7 +54,7 @@ func (r *ChatRoom) Run(service *RoomService) {
 			}
 		case message := <-r.Broadcast:
 			log.Printf("Broadcasting message to room %s: %s", r.Id, string(message.Content))
-			message, err := service.ProcessAndSaveMsg(ctx, r.Id, &message)
+			message, err := service.processAndSaveMessage(ctx, r.Id, &message)
 			if err != nil {
 				log.Printf("Error saving message %q in room %s", string(message.Content), r.Id)
 				break
