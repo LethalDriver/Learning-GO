@@ -136,7 +136,10 @@ func getRsaPrivateKey() (*rsa.PrivateKey, error) {
 
 type contextKey string
 
-const userIdKey contextKey = "userId"
+const (
+	userIdKey   contextKey = "userId"
+	usernameKey contextKey = "username"
+)
 
 // AuthMiddleware is the authorization middleware
 func AuthMiddleware(jwtService *AuthService, next http.Handler) http.Handler {
@@ -167,7 +170,14 @@ func AuthMiddleware(jwtService *AuthService, next http.Handler) http.Handler {
 			return
 		}
 
+		username, ok := claims["username"].(string)
+		if !ok {
+			http.Error(w, "Invalid token claims: username missing", http.StatusUnauthorized)
+			return
+		}
+
 		ctx := context.WithValue(r.Context(), userIdKey, userId)
+		ctx = context.WithValue(ctx, usernameKey, username)
 		r = r.WithContext(ctx)
 
 		// Call the next handler
