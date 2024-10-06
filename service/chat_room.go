@@ -58,7 +58,7 @@ func (r *ChatRoom) Run(service *RoomService) {
 		case seenUpdate := <-r.StatusUpdates:
 			log.Printf("Broadcasting seen update to room %s: %s", r.Id, seenUpdate.MessageId)
 
-			err := service.SaveSeenUpdate(ctx, r.Id, &seenUpdate)
+			err := service.roomRepo.InsertSeenBy(ctx, r.Id, seenUpdate.MessageId, seenUpdate.SeenBy.Id)
 			if err != nil {
 				log.Printf("Error saving seen update for message %s in room %s", seenUpdate.MessageId, r.Id)
 				break
