@@ -21,7 +21,6 @@ func main() {
 
 	mux.Handle("/user-service/", JWTMiddleware(authService, http.StripPrefix("/user-service", proxyHandler("http://user-service:8081"))))
 	mux.Handle("/chat-service/", JWTMiddleware(authService, http.StripPrefix("/chat-service", proxyHandler("http://chat-service:8082"))))
-	mux.Handle("/websocket-service/", JWTMiddleware(authService, http.StripPrefix("/websocket-service", proxyHandler("http://websocket-service:8083"))))
 
 	server := &http.Server{
 		Addr:         ":8080",

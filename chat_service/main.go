@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -20,6 +21,8 @@ func main() {
 	}
 
 	mongoUri := os.Getenv("MONGO_URI")
+	port := os.Getenv("PORT")
+
 	mongoClientOption := options.Client().ApplyURI(mongoUri)
 
 	client, err := mongo.Connect(context.TODO(), mongoClientOption)
@@ -43,7 +46,7 @@ func main() {
 	router := initializeRoutes(wsHandler) // configure routes
 
 	server := &http.Server{
-		Addr:    ":8081",
+		Addr:    fmt.Sprintf(":%s", port),
 		Handler: router,
 	}
 
