@@ -24,10 +24,6 @@ type MongoUserRepository struct {
 	collection *mongo.Collection
 }
 
-func (repo *MongoUserRepository) GetCollection() *mongo.Collection {
-	return repo.collection
-}
-
 func NewMongoUserRepository(client *mongo.Client, dbName, collectionName string) *MongoUserRepository {
 	collection := client.Database(dbName).Collection(collectionName)
 	return &MongoUserRepository{collection: collection}
