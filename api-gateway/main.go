@@ -33,7 +33,7 @@ func main() {
 		IdleTimeout:  30 * time.Second,
 	}
 
-	log.Println("API Gateway listening on port 8080...")
+	log.Printf("API Gateway listening on port %s...", port)
 	log.Fatal(server.ListenAndServe())
 }
 

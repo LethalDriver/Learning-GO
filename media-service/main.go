@@ -39,8 +39,8 @@ func main() {
 		Handler: nil,
 	}
 
-	log.Println("Listening...")
-	server.ListenAndServe() // Run the http server
+	log.Printf("Media Service listening on port %s...", port)
+	log.Fatal(server.ListenAndServe())
 }
 
 // func initializeRoutes() *http.ServeMux {
