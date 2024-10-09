@@ -1,6 +1,13 @@
 package repository
 
-import "time"
+import (
+	"io"
+	"time"
+)
+
+type Downloadable interface {
+	Download() (io.ReadCloser, error)
+}
 
 type MediaType int
 
