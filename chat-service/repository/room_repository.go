@@ -17,7 +17,6 @@ type ChatRoomRepository interface {
 	DeleteRoom(ctx context.Context, id string) error
 	AddMessageToRoom(ctx context.Context, roomId string, message *Message) error
 	InsertSeenBy(ctx context.Context, roomId string, messageId string, userId string) error
-	GetMessages(ctx context.Context, roomId string) ([]Message, error)
 	DeleteMessage(ctx context.Context, roomId string, messageId string) error
 }
 
@@ -25,19 +24,24 @@ type MongoChatRoomRepository struct {
 	collection *mongo.Collection
 }
 
-func (repo *MongoChatRoomRepository) GetCollection() *mongo.Collection {
-	return repo.collection
-}
-
 func NewMongoChatRoomRepository(client *mongo.Client, dbName, collectionName string) *MongoChatRoomRepository {
 	collection := client.Database(dbName).Collection(collectionName)
 	return &MongoChatRoomRepository{collection: collection}
 }
 
+func (repo *MongoChatRoomRepository) GetRoom(ctx context.Context, id string) (*ChatRoomEntity, error) {
+	var room ChatRoomEntity
+	filter := bson.M{"id": id}
+	err := repo.collection.FindOne(ctx, filter).Decode(&room)
+	if err != nil {
+		return nil, err
+	}
+	return &room, nil
+}
+
 func (repo *MongoChatRoomRepository) CreateRoom(ctx context.Context, id string) (*ChatRoomEntity, error) {
 	// Check if a room with the given ID already exists
-	existingRoom := &ChatRoomEntity{}
-	err := repo.collection.FindOne(ctx, bson.M{"id": id}).Decode(existingRoom)
+	_, err := repo.GetRoom(ctx, id)
 	if err == nil {
 		return nil, ErrRoomExists
 	} else if err != mongo.ErrNoDocuments {
@@ -57,9 +61,6 @@ func (repo *MongoChatRoomRepository) CreateRoom(ctx context.Context, id string) 
 	return newRoom, nil
 }
 
-func (repo *MongoChatRoomRepository) GetRoom(ctx context.Context, id string) (*ChatRoomEntity, error) {
-	return GetByKey[ChatRoomEntity](ctx, "id", id, repo)
-}
 
 func (repo *MongoChatRoomRepository) DeleteRoom(ctx context.Context, id string) error {
 	filter := bson.D{{Key: "id", Value: id}}
@@ -87,14 +88,6 @@ func (repo *MongoChatRoomRepository) InsertSeenBy(ctx context.Context, roomId st
 	}
 	_, err := repo.collection.UpdateOne(ctx, filter, update)
 	return err
-}
-
-func (repo *MongoChatRoomRepository) GetMessages(ctx context.Context, roomId string) ([]Message, error) {
-	room, err := repo.GetRoom(ctx, roomId)
-	if err != nil {
-		return nil, err
-	}
-	return room.Messages, nil
 }
 
 func (repo *MongoChatRoomRepository) DeleteMessage(ctx context.Context, roomId string, messageId string) error {

@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -33,11 +34,11 @@ func NewMongoUserRepository(client *mongo.Client, dbName, collectionName string)
 }
 
 func (repo *MongoUserRepository) GetById(ctx context.Context, id string) (*UserEntity, error) {
-	return GetByKey[UserEntity](ctx, "id", id, repo)
+	return getByKey[UserEntity](ctx, "id", id, repo.collection)
 }
 
 func (repo *MongoUserRepository) GetByUsername(ctx context.Context, username string) (*UserEntity, error) {
-	return GetByKey[UserEntity](ctx, "username", username, repo)
+	return getByKey[UserEntity](ctx, "username", username, repo.collection)
 }
 
 func (repo *MongoUserRepository) Save(ctx context.Context, user *UserEntity) error {
@@ -46,4 +47,15 @@ func (repo *MongoUserRepository) Save(ctx context.Context, user *UserEntity) err
 		return err
 	}
 	return nil
+}
+
+// GetByKey filters the collection by the given key and returns the result.
+func getByKey[T, V any](ctx context.Context, key string, value V, collection *mongo.Collection) (*T, error) {
+	var entity T
+	filter := bson.M{key: value}
+	err := collection.FindOne(ctx, filter).Decode(&entity)
+	if err != nil {
+		return nil, err
+	}
+	return &entity, nil
 }
