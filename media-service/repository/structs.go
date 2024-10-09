@@ -1,4 +1,4 @@
-package structs
+package repository
 
 import "time"
 
@@ -16,6 +16,7 @@ type MediaFile struct {
 	Type     MediaType    `bson:"type" json:"type"`
 	Url      string       `bson:"url" json:"url"`
 	Metadata FileMetadata `bson:"metadata" json:"metadata"`
+	RoomId   string       `bson:"roomId" json:"roomId"`
 }
 
 type FileMetadata struct {
