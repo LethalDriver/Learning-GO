@@ -1,12 +1,15 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 
 	"github.com/joho/godotenv"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func main() {
@@ -27,21 +30,21 @@ func main() {
 
 	log.Println("Connected to MongoDB!")
 
-	router := initializeRoutes() 
+	// router := initializeRoutes()
 
 	port := os.Getenv("PORT")
 
 	server := &http.Server{
 		Addr:    fmt.Sprintf(":%s", port),
-		Handler: router,
+		Handler: nil,
 	}
 
 	log.Println("Listening...")
 	server.ListenAndServe() // Run the http server
 }
 
-func initializeRoutes() *http.ServeMux {
-	mux := http.NewServeMux()
-	mux.Handle("GET /image/{imageId}", http.HandlerFunc(// TODO))
-	return mux
-}
+// func initializeRoutes() *http.ServeMux {
+// 	mux := http.NewServeMux()
+// 	mux.Handle("GET /image/{imageId}")
+// 	return mux
+// }
