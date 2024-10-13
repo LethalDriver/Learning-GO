@@ -37,7 +37,7 @@ func (repo *MongoFileRepository) getCollection(mediaType MediaType) (*mongo.Coll
 	return collection, nil
 }
 
-func (repo *MongoFileRepository) GetImage(ctx context.Context, id string, mediaType MediaType) (*MediaFile, error) {
+func (repo *MongoFileRepository) GetFile(ctx context.Context, id string, mediaType MediaType) (*MediaFile, error) {
 	var file MediaFile
 	filter := bson.M{"id": id}
 	collection, err := repo.getCollection(mediaType)
@@ -51,7 +51,7 @@ func (repo *MongoFileRepository) GetImage(ctx context.Context, id string, mediaT
 	return &file, nil
 }
 
-func (repo *MongoFileRepository) DeleteImage(ctx context.Context, id string, mediaType MediaType) error {
+func (repo *MongoFileRepository) DeleteFile(ctx context.Context, id string, mediaType MediaType) error {
 	filter := bson.M{"id": id}
 	collection, err := repo.getCollection(mediaType)
 	if err != nil {
@@ -64,7 +64,7 @@ func (repo *MongoFileRepository) DeleteImage(ctx context.Context, id string, med
 	return nil
 }
 
-func (repo *MongoFileRepository) CreateImage(ctx context.Context, file *MediaFile, mediaType MediaType) error {
+func (repo *MongoFileRepository) SaveFile(ctx context.Context, file *MediaFile, mediaType MediaType) error {
 	collection, err := repo.getCollection(mediaType)
 	if err != nil {
 		return err
