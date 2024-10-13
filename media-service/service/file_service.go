@@ -14,7 +14,7 @@ import (
 )
 
 type FileService struct {
-	image   repository.FileRepository
+	repo   repository.FileRepository
 	storage StorageService
 }
 
@@ -45,7 +45,7 @@ func (s *FileService) CreateFile(ctx context.Context, file multipart.File, heade
 	}
 
 	// Save the media file metadata to the repository
-	err = s.image.SaveFile(ctx, mediaFile, mediaType)
+	err = s.repo.SaveFile(ctx, mediaFile, mediaType)
 	if err != nil {
 		return nil, fmt.Errorf("unable to save media file metadata: %w", err)
 	}
