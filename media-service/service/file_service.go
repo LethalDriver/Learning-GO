@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"media_service/repository"
@@ -13,8 +14,10 @@ import (
 	"github.com/google/uuid"
 )
 
+var ErrPermissionDenied = errors.New("you don't have permissions")
+
 type FileService struct {
-	repo   repository.FileRepository
+	repo    repository.FileRepository
 	storage StorageService
 }
 
@@ -57,6 +60,17 @@ func (s *FileService) CreateFile(ctx context.Context, file multipart.File, heade
 
 	return mediaFile, nil
 
+}
+
+func (s *FileService) DeleteFile(ctx context.Context, id string, userId string, mediaType repository.MediaType) error {
+	file, err := s.repo.GetFile(ctx, id, mediaType)
+	if err != nil {
+		return fmt.Errorf("failed fetching file %q from database: %w", id, err)
+	}
+	if file.Metadata.CreatedBy != userId {
+		return fmt.Errorf("as %q: %w to delete this file", userId, err)
+	}
+	return s.repo.DeleteFile(ctx, userId, mediaType)
 }
 
 func constructLocalUrl(id string, mediaType repository.MediaType) (string, error) {
