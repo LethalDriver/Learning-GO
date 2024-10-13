@@ -12,7 +12,7 @@ type FileHandler struct {
 func (h *FileHandler) HandleMediaUpload(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	userId := r.Header.Get("X-User-Id")
-	roomId := r.Header.Get("X-Room-Id")
+	roomId := r.PathValue("roomId")
 
 	err := r.ParseMultipartForm(10 << 20) // 10 MB limit
 	if err != nil {
