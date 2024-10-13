@@ -9,12 +9,14 @@ import (
 	"mime/multipart"
 	"os"
 	"path/filepath"
+	"slices"
 	"time"
 
 	"github.com/google/uuid"
 )
 
 var ErrPermissionDenied = errors.New("you don't have permissions")
+var ErrFileNotInRoom = errors.New("does not belong to room")
 
 type FileService struct {
 	repo    repository.FileRepository
@@ -62,15 +64,41 @@ func (s *FileService) CreateFile(ctx context.Context, file multipart.File, heade
 
 }
 
-func (s *FileService) DeleteFile(ctx context.Context, id string, userId string, mediaType repository.MediaType) error {
+func (s *FileService) DeleteFile(ctx context.Context, id string, roomId string, userId string, mediaType repository.MediaType) error {
 	file, err := s.repo.GetFile(ctx, id, mediaType)
 	if err != nil {
 		return fmt.Errorf("failed fetching file %q from database: %w", id, err)
 	}
 	if file.Metadata.CreatedBy != userId {
-		return fmt.Errorf("as %q: %w to delete this file", userId, err)
+		return fmt.Errorf("as %q: %w to delete this file", userId, ErrPermissionDenied)
+	}
+	if err := checkIfFileInRoom(file, roomId); err != nil {
+		return err
 	}
 	return s.repo.DeleteFile(ctx, userId, mediaType)
+}
+
+func (s *FileService) GetFile(ctx context.Context, id string, roomId string, mediaType repository.MediaType) (*repository.MediaFile, error) {
+	file, err := s.repo.GetFile(ctx, id, mediaType)
+	if err != nil {
+		return nil, fmt.Errorf("failed fetching file %q from database: %w", id, err)
+	}
+	if err := checkIfFileInRoom(file, roomId); err != nil {
+		return nil, err
+	}
+	localUrl, err := constructLocalUrl(id, mediaType)
+	if err != nil {
+		return nil, err
+	}
+	file.Url = localUrl
+	return file, nil
+}
+
+func checkIfFileInRoom(file *repository.MediaFile, roomId string) error {
+	if !slices.Contains(file.Metadata.RoomIds, roomId) {
+		return fmt.Errorf("file %q %w: %q", file.Id, ErrFileNotInRoom, roomId)
+	}
+	return nil
 }
 
 func constructLocalUrl(id string, mediaType repository.MediaType) (string, error) {
