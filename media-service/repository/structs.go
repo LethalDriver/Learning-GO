@@ -18,6 +18,19 @@ const (
 	Other
 )
 
+func (m MediaType) String() string {
+	switch m {
+	case Image:
+		return "image"
+	case Video:
+		return "video"
+	case Audio:
+		return "audio"
+	default:
+		return "other"
+	}
+}
+
 type MediaFile struct {
 	Id       string        `bson:"id" json:"id"`
 	Type     MediaType     `bson:"type" json:"type"`
