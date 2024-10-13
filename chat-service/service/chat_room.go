@@ -46,7 +46,7 @@ func (r *ChatRoom) Run(service *ChatService) {
 				}
 				break
 			}
-			service.pumpExistingMessages(ctx, conn, room.Messages)
+			service.pumpExistingMessages(conn, room.Messages)
 			r.Members[conn] = true
 		case conn := <-r.Unregister:
 			log.Printf("Unregistering connection from room %s", r.Id)

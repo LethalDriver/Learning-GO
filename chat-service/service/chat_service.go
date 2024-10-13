@@ -38,7 +38,7 @@ func (s *ChatService) ConnectToRoom(ctx context.Context, roomId string, user rep
 	return nil
 }
 
-func (s *ChatService) pumpExistingMessages(ctx context.Context, conn *Connection, messages []repository.Message) {
+func (s *ChatService) pumpExistingMessages(conn *Connection, messages []repository.Message) {
 	for _, message := range messages {
 		conn.sendMessage <- message
 	}
