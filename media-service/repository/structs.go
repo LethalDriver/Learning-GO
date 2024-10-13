@@ -12,10 +12,10 @@ type Downloadable interface {
 type MediaType int
 
 const (
-	Audio MediaType = iota
-	Image
+	Image MediaType = iota
 	Video
-	Unviewable
+	Audio
+	Other
 )
 
 type MediaFile struct {
