@@ -6,6 +6,7 @@ import (
 	"io"
 	"media_service/repository"
 	"mime/multipart"
+	"os"
 	"path/filepath"
 	"time"
 
@@ -17,18 +18,18 @@ type FileService struct {
 	storage StorageService
 }
 
-func (s *FileService) CreateFile(ctx context.Context, file multipart.File, header *multipart.FileHeader, sentBy string, roomId string) (string, error) {
+func (s *FileService) CreateFile(ctx context.Context, file multipart.File, header *multipart.FileHeader, sentBy string, roomId string) (*repository.MediaFile, error) {
 	id := uuid.New().String()
 	mediaType := determineMediaType(header.Filename)
 
 	fileContent, err := io.ReadAll(file)
 	if err != nil {
-		return "", fmt.Errorf("unable to read file %q content: %w", header.Filename, err)
+		return nil, fmt.Errorf("unable to read file %q content: %w", header.Filename, err)
 	}
 
 	url, err := s.storage.UploadFile(fileContent)
 	if err != nil {
-		return "", fmt.Errorf("unable to save file to storage: %w", err)
+		return nil, fmt.Errorf("unable to save file to storage: %w", err)
 	}
 
 	mediaFile := &repository.MediaFile{
@@ -46,11 +47,24 @@ func (s *FileService) CreateFile(ctx context.Context, file multipart.File, heade
 	// Save the media file metadata to the repository
 	err = s.image.SaveFile(ctx, mediaFile, mediaType)
 	if err != nil {
-		return "", fmt.Errorf("unable to save media file metadata: %w", err)
+		return nil, fmt.Errorf("unable to save media file metadata: %w", err)
 	}
 
-	return mediaFile.Id, nil
+	mediaFile.Url, err = constructLocalUrl(id, mediaType)
+	if err != nil {
+		return nil, fmt.Errorf("unable to construct local URL: %w", err)
+	}
 
+	return mediaFile, nil
+
+}
+
+func constructLocalUrl(id string, mediaType repository.MediaType) (string, error) {
+	baseUrl := os.Getenv("BASE_URL")
+	if baseUrl == "" {
+		return "", fmt.Errorf("BASE_URL environment variable not set")
+	}
+	return fmt.Sprintf("%s/%s/%s", baseUrl, mediaType.String(), id), nil
 }
 
 func determineMediaType(filename string) repository.MediaType {
