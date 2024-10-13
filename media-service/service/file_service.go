@@ -17,7 +17,7 @@ type FileService struct {
 	storage StorageService
 }
 
-func (s *FileService) createFile(ctx context.Context, file multipart.File, header *multipart.FileHeader, sentBy string, roomId string) (string, error) {
+func (s *FileService) CreateFile(ctx context.Context, file multipart.File, header *multipart.FileHeader, sentBy string, roomId string) (string, error) {
 	id := uuid.New().String()
 	mediaType := determineMediaType(header.Filename)
 
@@ -44,7 +44,7 @@ func (s *FileService) createFile(ctx context.Context, file multipart.File, heade
 	}
 
 	// Save the media file metadata to the repository
-	err = s.image.SaveFile(ctx, mediaFile)
+	err = s.image.SaveFile(ctx, mediaFile, mediaType)
 	if err != nil {
 		return "", fmt.Errorf("unable to save media file metadata: %w", err)
 	}
