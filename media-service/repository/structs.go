@@ -19,11 +19,11 @@ const (
 )
 
 type MediaFile struct {
-	Id       string       `bson:"id" json:"id"`
-	Type     MediaType    `bson:"type" json:"type"`
-	Url      string       `bson:"url" json:"url"`
-	Metadata FileMetadata `bson:"metadata" json:"metadata"`
-	RoomId   string       `bson:"roomId" json:"roomId"`
+	Id       string        `bson:"id" json:"id"`
+	Type     MediaType     `bson:"type" json:"type"`
+	Url      string        `bson:"url" json:"url"`
+	Metadata *FileMetadata `bson:"metadata" json:"metadata"`
+	RoomId   string        `bson:"roomId" json:"roomId"`
 }
 
 type FileMetadata struct {
