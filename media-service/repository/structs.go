@@ -23,11 +23,11 @@ type MediaFile struct {
 	Type     MediaType     `bson:"type" json:"type"`
 	Url      string        `bson:"url" json:"url"`
 	Metadata *FileMetadata `bson:"metadata" json:"metadata"`
-	RoomId   string        `bson:"roomId" json:"roomId"`
 }
 
 type FileMetadata struct {
 	CreatedAt time.Time `bson:"createdAt" json:"createdAt"`
 	CreatedBy string    `bson:"createdBy" json:"createdBy"`
 	Size      int64     `bson:"size" json:"size"`
+	RoomIds   []string  `bson:"roomIds" json:"roomIds"`
 }
