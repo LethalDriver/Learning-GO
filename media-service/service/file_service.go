@@ -2,11 +2,13 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"media_service/repository"
 	"mime/multipart"
+	"net/http"
 	"os"
 	"path/filepath"
 	"slices"
@@ -74,15 +76,40 @@ func (s *FileService) DeleteFile(ctx context.Context, id string, roomId string, 
 	return s.repo.DeleteFile(ctx, userId, mediaType)
 }
 
-func (s *FileService) GetFile(ctx context.Context, id string, roomId string, mediaType repository.MediaType) (*repository.MediaFile, error) {
+func (s *FileService) GetFile(ctx context.Context, id string, roomId string, mediaType repository.MediaType, w http.ResponseWriter) error {
+	// Fetch the file metadata
 	file, err := s.repo.GetFile(ctx, id, mediaType)
 	if err != nil {
-		return nil, fmt.Errorf("failed fetching file %q from database: %w", id, err)
+		return fmt.Errorf("failed fetching file %q from database: %w", id, err)
 	}
 	if err := checkIfFileInRoom(file, roomId); err != nil {
-		return nil, err
+		return err
 	}
-	return file, nil
+
+	imageData, err := s.storage.DownloadFile(ctx, mediaType, file.MediaId)
+	if err != nil {
+		return fmt.Errorf("failed downloading image %q: %w", id, err)
+	}
+
+	// Set the response headers
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; mediaId=%s", file.MediaId))
+
+	// Create a JSON response with metadata and binary data
+	response := struct {
+		Metadata *repository.MediaFile `json:"metadata"`
+		Image    []byte                `json:"image"`
+	}{
+		Metadata: file,
+		Image:    imageData,
+	}
+
+	// Encode the response as JSON
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		return fmt.Errorf("failed encoding response: %w", err)
+	}
+
+	return nil
 }
 
 func checkIfFileInRoom(file *repository.MediaFile, roomId string) error {

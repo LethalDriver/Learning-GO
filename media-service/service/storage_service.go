@@ -23,7 +23,7 @@ func (m MediaType) String() string {
 }
 
 type MediaStorageService interface {
-	DownloadFile(ctx context.Context, mediaType repository.MediaType, mediaId string)
+	DownloadFile(ctx context.Context, mediaType repository.MediaType, mediaId string) ([]byte, error)
 	UploadFile(ctx context.Context, mediaType repository.MediaType, blobId string, data []byte) error
 }
 
