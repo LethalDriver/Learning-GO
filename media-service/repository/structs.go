@@ -34,7 +34,7 @@ func (m MediaType) String() string {
 type MediaFile struct {
 	Id       string        `bson:"id" json:"id"`
 	Type     MediaType     `bson:"type" json:"type"`
-	Url      string        `bson:"url" json:"url"`
+	MediaId  string        `bson:"media_id" json:"media_id"`
 	Metadata *FileMetadata `bson:"metadata" json:"metadata"`
 }
 

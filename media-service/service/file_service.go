@@ -20,11 +20,12 @@ var ErrFileNotInRoom = errors.New("does not belong to room")
 
 type FileService struct {
 	repo    repository.FileRepository
-	storage StorageService
+	storage MediaStorageService
 }
 
 func (s *FileService) CreateFile(ctx context.Context, file multipart.File, header *multipart.FileHeader, sentBy string, roomId string) (*repository.MediaFile, error) {
 	id := uuid.New().String()
+	mediaId := uuid.New().String()
 	mediaType := determineMediaType(header.Filename)
 
 	fileContent, err := io.ReadAll(file)
@@ -32,15 +33,15 @@ func (s *FileService) CreateFile(ctx context.Context, file multipart.File, heade
 		return nil, fmt.Errorf("unable to read file %q content: %w", header.Filename, err)
 	}
 
-	url, err := s.storage.UploadFile(fileContent)
+	err = s.storage.UploadFile(ctx, mediaType, mediaId, fileContent)
 	if err != nil {
 		return nil, fmt.Errorf("unable to save file to storage: %w", err)
 	}
 
 	mediaFile := &repository.MediaFile{
-		Id:   id,
-		Type: mediaType,
-		Url:  url,
+		Id:      id,
+		Type:    mediaType,
+		MediaId: mediaId,
 		Metadata: &repository.FileMetadata{
 			CreatedAt: time.Now(),
 			CreatedBy: sentBy,
@@ -53,11 +54,6 @@ func (s *FileService) CreateFile(ctx context.Context, file multipart.File, heade
 	err = s.repo.SaveFile(ctx, mediaFile, mediaType)
 	if err != nil {
 		return nil, fmt.Errorf("unable to save media file metadata: %w", err)
-	}
-
-	mediaFile.Url, err = constructLocalUrl(id, mediaType)
-	if err != nil {
-		return nil, fmt.Errorf("unable to construct local URL: %w", err)
 	}
 
 	return mediaFile, nil
@@ -86,11 +82,6 @@ func (s *FileService) GetFile(ctx context.Context, id string, roomId string, med
 	if err := checkIfFileInRoom(file, roomId); err != nil {
 		return nil, err
 	}
-	localUrl, err := constructLocalUrl(id, mediaType)
-	if err != nil {
-		return nil, err
-	}
-	file.Url = localUrl
 	return file, nil
 }
 
