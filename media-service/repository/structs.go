@@ -31,10 +31,23 @@ func (m MediaType) String() string {
 	}
 }
 
+func ParseMediaType(s string) (MediaType, error) {
+	switch s {
+	case "image":
+		return Image, nil
+	case "video":
+		return Video, nil
+	case "audio":
+		return Audio, nil
+	default:
+		return Other, nil
+	}
+}
+
 type MediaFile struct {
 	Id       string        `bson:"id" json:"id"`
 	Type     MediaType     `bson:"type" json:"type"`
-	Url      string        `bson:"url" json:"url"`
+	MediaId  string        `bson:"media_id" json:"media_id"`
 	Metadata *FileMetadata `bson:"metadata" json:"metadata"`
 }
 
