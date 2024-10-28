@@ -15,14 +15,27 @@ const (
 	TypeDeleteMessage
 )
 
+type Role int
+
+const (
+	Member Role = iota
+	Admin
+)
+
 type WsIncomingMessage struct {
 	Type MessageType     `json:"type"`
 	Data json.RawMessage `json:"data"`
 }
 
+type UserPermissions struct {
+	UserId string `json:"userId"`
+	Role   Role   `json:"permission"`
+}
+
 type ChatRoomEntity struct {
-	Id       string    `bson:"id" json:"id"`
-	Messages []Message `bson:"messages" json:"messages"`
+	Id       string            `bson:"id" json:"id"`
+	Messages []Message         `bson:"messages" json:"messages"`
+	Users    []UserPermissions `bson:"users" json:"users"`
 }
 
 type Message struct {
@@ -100,6 +113,50 @@ func (mt *MessageType) UnmarshalJSON(data []byte) error {
 		*mt = TypeDeleteMessage
 	default:
 		return errors.New("invalid MessageType")
+	}
+
+	return nil
+}
+
+func (r Role) String() string {
+	switch r {
+	case Member:
+		return "Member"
+	case Admin:
+		return "Admin"
+	default:
+		return "Unknown"
+	}
+}
+
+func RoleFromString(s string) (Role, error) {
+	switch s {
+	case "Member":
+		return Member, nil
+	case "Admin":
+		return Admin, nil
+	default:
+		return -1, fmt.Errorf("unknown role: %s", s)
+	}
+}
+
+func (r Role) MarshalJSON() ([]byte, error) {
+	return json.Marshal(r.String())
+}
+
+func (r *Role) UnmarshalJSON(data []byte) error {
+	var s string
+	if err := json.Unmarshal(data, &s); err != nil {
+		return err
+	}
+
+	switch s {
+	case "Member":
+		*r = Member
+	case "Admin":
+		*r = Admin
+	default:
+		return errors.New("invalid Role")
 	}
 
 	return nil
