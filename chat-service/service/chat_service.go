@@ -5,6 +5,7 @@ import (
 	"log"
 	"time"
 
+	"example.com/chat_app/chat_service/exception"
 	"example.com/chat_app/chat_service/repository"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
@@ -25,7 +26,7 @@ func NewChatService(roomRepo *repository.MongoChatRoomRepository, roomManager Ro
 func (s *ChatService) ConnectToRoom(ctx context.Context, roomId string, user repository.UserDetails, ws *websocket.Conn) error {
 	_, err := s.roomRepo.CreateRoom(ctx, roomId)
 	if err != nil {
-		if err != repository.ErrRoomExists {
+		if err != exception.ErrRoomExists {
 			return err
 		}
 	}

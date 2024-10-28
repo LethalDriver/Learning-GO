@@ -2,14 +2,12 @@ package repository
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
+	"example.com/chat_app/chat_service/exception"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
-
-var ErrRoomExists = errors.New("room already exists")
 
 type ChatRoomRepository interface {
 	CreateRoom(ctx context.Context, id string) (*ChatRoomEntity, error)
@@ -43,7 +41,7 @@ func (repo *MongoChatRoomRepository) CreateRoom(ctx context.Context, id string) 
 	// Check if a room with the given ID already exists
 	_, err := repo.GetRoom(ctx, id)
 	if err == nil {
-		return nil, ErrRoomExists
+		return nil, exception.ErrRoomExists
 	} else if err != mongo.ErrNoDocuments {
 		return nil, fmt.Errorf("error checking for existing room: %w", err)
 	}
@@ -60,7 +58,6 @@ func (repo *MongoChatRoomRepository) CreateRoom(ctx context.Context, id string) 
 	}
 	return newRoom, nil
 }
-
 
 func (repo *MongoChatRoomRepository) DeleteRoom(ctx context.Context, id string) error {
 	filter := bson.D{{Key: "id", Value: id}}
