@@ -7,8 +7,8 @@ services:
     ports:
       - "27017:27017"
     environment:
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: example
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
     networks:
       - chat_app_network
 
@@ -17,9 +17,9 @@ services:
       context: .
       dockerfile: ./api-gateway/Dockerfile
     ports:
-      - "8080:8080"
+      - "${API_GATEWAY_PORT}:${API_GATEWAY_PORT}"
     environment:
-      - PORT=8080
+      - PORT=${API_GATEWAY_PORT}
     volumes:
       - ./api-gateway/public_key.pem:/app/public_key.pem
     depends_on:
@@ -33,11 +33,11 @@ services:
       context: .
       dockerfile: ./user-service/Dockerfile
     ports:
-      - "8081:8081"
+      - "${USER_SERVICE_PORT}:${USER_SERVICE_PORT}"
     environment:
-      - TOKEN_EXP_HS=3
-      - MONGO_URI=mongodb://root:example@mongodb:27017
-      - PORT=8081
+      - TOKEN_EXP_HS=${TOKEN_EXP_HS}
+      - MONGO_URI=${MONGO_URI}
+      - PORT=${USER_SERVICE_PORT}
     depends_on:
       - mongodb
     networks:
@@ -48,10 +48,10 @@ services:
       context: .
       dockerfile: ./chat-service/Dockerfile
     ports:
-      - "8082:8082"
+      - "${CHAT_SERVICE_PORT}:${CHAT_SERVICE_PORT}"
     environment:
-      - MONGO_URI=mongodb://root:example@mongodb:27017
-      - PORT=8082
+      - MONGO_URI=${MONGO_URI}
+      - PORT=${CHAT_SERVICE_PORT}
     depends_on:
       - mongodb
     networks:
