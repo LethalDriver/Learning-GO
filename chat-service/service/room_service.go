@@ -52,12 +52,12 @@ func (s *RoomService) MakeUserAdmin(ctx context.Context, roomId string, userId s
 	return s.repo.InsertUserIntoRoom(ctx, roomId, userPermissions)
 }
 
-func (s *RoomService) CreateRoom(ctx context.Context, user repository.UserDetails) (*repository.ChatRoomEntity, error) {
+func (s *RoomService) CreateRoom(ctx context.Context, userId string) (*repository.ChatRoomEntity, error) {
 	room, err := s.repo.CreateRoom(ctx)
 	if err != nil {
 		return nil, err
 	}
-	err = s.AddAdminToRoom(ctx, room.Id, user.Id)
+	err = s.AddAdminToRoom(ctx, room.Id, userId)
 	if err != nil {
 		return nil, err
 	}

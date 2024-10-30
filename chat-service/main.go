@@ -39,11 +39,13 @@ func main() {
 	chatRoomRepo := repository.NewMongoChatRoomRepository(client, "chatdb", "chatrooms")
 
 	roomManager := service.NewRoomManager()
-	roomService := service.NewChatService(chatRoomRepo, roomManager)
+	chatService := service.NewChatService(chatRoomRepo, roomManager)
+	roomService := service.NewRoomService(chatRoomRepo)
 
-	wsHandler := handler.NewWebsocketHandler(roomService)
+	wsHandler := handler.NewWebsocketHandler(chatService)
+	roomHandler := handler.NewRoomHandler(roomService)
 
-	router := initializeRoutes(wsHandler) // configure routes
+	router := initializeRoutes(wsHandler, roomHandler) // configure routes
 
 	server := &http.Server{
 		Addr:    fmt.Sprintf(":%s", port),
@@ -54,8 +56,9 @@ func main() {
 	log.Fatal(server.ListenAndServe())
 }
 
-func initializeRoutes(ws *handler.WebsocketHandler) *http.ServeMux {
+func initializeRoutes(ws *handler.WebsocketHandler, rh *handler.RoomHandler) *http.ServeMux {
 	mux := http.NewServeMux()
-	mux.Handle("GET /room/{roomId}", http.HandlerFunc(ws.HandleWebSocketUpgradeRequest))
+	mux.Handle("GET /room/{roomId}/connect", http.HandlerFunc(ws.HandleWebSocketUpgradeRequest))
+	mux.Handle("POST /room", http.HandlerFunc(rh.CreateRoom))
 	return mux
 }

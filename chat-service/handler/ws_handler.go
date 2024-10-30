@@ -4,7 +4,6 @@ import (
 	"log"
 	"net/http"
 
-	"example.com/chat_app/chat_service/repository"
 	"example.com/chat_app/chat_service/service"
 	"github.com/gorilla/websocket"
 )
@@ -41,11 +40,6 @@ func (wsh *WebsocketHandler) HandleWebSocketUpgradeRequest(w http.ResponseWriter
 	userId := r.Header.Get("X-User-Id")
 	username := r.Header.Get("X-Username")
 
-	user := repository.UserDetails{
-		Id:       userId,
-		Username: username,
-	}
-
 	// Upgrade the HTTP connection to a WebSocket connection
 	conn, err := wsh.upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -54,5 +48,5 @@ func (wsh *WebsocketHandler) HandleWebSocketUpgradeRequest(w http.ResponseWriter
 	}
 	log.Println("WebSocket connection upgraded successfully")
 
-	wsh.chatService.ConnectToRoom(ctx, roomId, user, conn)
+	wsh.chatService.ConnectToRoom(ctx, roomId, userId, username, conn)
 }

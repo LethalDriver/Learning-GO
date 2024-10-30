@@ -5,10 +5,10 @@ import (
 	"log"
 	"time"
 
-	"example.com/chat_app/chat_service/exception"
 	"example.com/chat_app/chat_service/repository"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type ChatService struct {
@@ -23,17 +23,21 @@ func NewChatService(roomRepo *repository.MongoChatRoomRepository, roomManager Ro
 	}
 }
 
-func (s *ChatService) ConnectToRoom(ctx context.Context, roomId string, user repository.UserDetails, ws *websocket.Conn) error {
-	_, err := s.roomRepo.CreateRoom(ctx)
+func (s *ChatService) ConnectToRoom(ctx context.Context, roomId, userId, username string, ws *websocket.Conn) error {
+	_, err := s.roomRepo.GetRoom(ctx, roomId)
 	if err != nil {
-		if err != exception.ErrRoomExists {
+		if err != mongo.ErrNoDocuments {
 			return err
 		}
+	}
+	userDetails := repository.UserDetails{
+		Id:       userId,
+		Username: username,
 	}
 	room := s.roomManager.ManageRoom(roomId)
 	go room.Run(s)
 
-	go handleConnection(ws, room, user)
+	go handleConnection(ws, room, userDetails)
 
 	log.Printf("Room: %s running", roomId)
 	return nil
