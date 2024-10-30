@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
 
 	"example.com/chat_app/chat_service/service"
@@ -25,7 +26,8 @@ func (rh *RoomHandler) CreateRoom(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
-		w.WriteHeader(http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 	response := struct {
 		RoomId string `json:"roomId"`
