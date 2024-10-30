@@ -4,13 +4,13 @@ import (
 	"context"
 	"fmt"
 
-	"example.com/chat_app/chat_service/exception"
+	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type ChatRoomRepository interface {
-	CreateRoom(ctx context.Context, id string) (*ChatRoomEntity, error)
+	CreateRoom(ctx context.Context) (*ChatRoomEntity, error)
 	GetRoom(ctx context.Context, id string) (*ChatRoomEntity, error)
 	DeleteRoom(ctx context.Context, id string) error
 	AddMessageToRoom(ctx context.Context, roomId string, message *Message) error
@@ -41,22 +41,14 @@ func (repo *MongoChatRoomRepository) GetRoom(ctx context.Context, id string) (*C
 	return &room, nil
 }
 
-func (repo *MongoChatRoomRepository) CreateRoom(ctx context.Context, id string) (*ChatRoomEntity, error) {
-	// Check if a room with the given ID already exists
-	_, err := repo.GetRoom(ctx, id)
-	if err == nil {
-		return nil, exception.ErrRoomExists
-	} else if err != mongo.ErrNoDocuments {
-		return nil, fmt.Errorf("error checking for existing room: %w", err)
-	}
-
+func (repo *MongoChatRoomRepository) CreateRoom(ctx context.Context) (*ChatRoomEntity, error) {
 	// Create a new room if it does not exist
 	newRoom := &ChatRoomEntity{
-		Id:       id,
+		Id:       uuid.NewString(),
 		Messages: []Message{},
 	}
 
-	_, err = repo.collection.InsertOne(ctx, newRoom)
+	_, err := repo.collection.InsertOne(ctx, newRoom)
 	if err != nil {
 		return nil, fmt.Errorf("error inserting new room: %w", err)
 	}
@@ -130,7 +122,7 @@ func (repo *MongoChatRoomRepository) GetUsersPermissions(ctx context.Context, ro
 	defer cursor.Close(ctx)
 
 	if !cursor.Next(ctx) {
-		return nil, exception.ErrEntityNotFound
+		return nil, mongo.ErrNoDocuments
 	}
 
 	var result struct {

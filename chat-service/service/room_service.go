@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
-	"example.com/chat_app/chat_service/exception"
 	"example.com/chat_app/chat_service/repository"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 var ErrInsufficientPermissions = errors.New("insufficient permissions")
@@ -16,10 +16,6 @@ type RoomService struct {
 
 func NewRoomService(repo repository.ChatRoomRepository) *RoomService {
 	return &RoomService{repo: repo}
-}
-
-func (s *RoomService) CreateRoom(ctx context.Context, roomId string) (*repository.ChatRoomEntity, error) {
-	return s.repo.CreateRoom(ctx, roomId)
 }
 
 func (s *RoomService) GetRoom(ctx context.Context, roomId string) (*repository.ChatRoomEntity, error) {
@@ -56,6 +52,28 @@ func (s *RoomService) MakeUserAdmin(ctx context.Context, roomId string, userId s
 	return s.repo.InsertUserIntoRoom(ctx, roomId, userPermissions)
 }
 
+func (s *RoomService) CreateRoom(ctx context.Context, user repository.UserDetails) (*repository.ChatRoomEntity, error) {
+	room, err := s.repo.CreateRoom(ctx)
+	if err != nil {
+		return nil, err
+	}
+	err = s.AddAdminToRoom(ctx, room.Id, user.Id)
+	if err != nil {
+		return nil, err
+	}
+	return room, nil
+}
+
+func (s *RoomService) checkIfRoomExists(ctx context.Context, roomId string) bool {
+	_, err := s.repo.GetRoom(ctx, roomId)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return false
+		}
+	}
+	return true
+}
+
 func (s *RoomService) AddAdminToRoom(ctx context.Context, roomId string, userId string) error {
 	userPermission := repository.UserPermissions{
 		UserId: userId,
@@ -63,10 +81,11 @@ func (s *RoomService) AddAdminToRoom(ctx context.Context, roomId string, userId 
 	}
 	return s.repo.InsertUserIntoRoom(ctx, roomId, userPermission)
 }
+
 func (s *RoomService) validateAdminPrivileges(ctx context.Context, roomId, userId string) error {
 	userPermissions, err := s.repo.GetUsersPermissions(ctx, roomId, userId)
 	if err != nil {
-		if err == exception.ErrEntityNotFound {
+		if err == mongo.ErrNoDocuments {
 			return ErrInsufficientPermissions
 		}
 		return err

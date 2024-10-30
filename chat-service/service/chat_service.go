@@ -24,7 +24,7 @@ func NewChatService(roomRepo *repository.MongoChatRoomRepository, roomManager Ro
 }
 
 func (s *ChatService) ConnectToRoom(ctx context.Context, roomId string, user repository.UserDetails, ws *websocket.Conn) error {
-	_, err := s.roomRepo.CreateRoom(ctx, roomId)
+	_, err := s.roomRepo.CreateRoom(ctx)
 	if err != nil {
 		if err != exception.ErrRoomExists {
 			return err
