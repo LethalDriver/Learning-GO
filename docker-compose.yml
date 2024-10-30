@@ -27,6 +27,10 @@ services:
       - chat-service
     networks:
       - chat_app_network
+    develop:
+      watch:
+        - action: rebuild
+          path: ./api-gateway
 
   user-service:
     build:
@@ -42,6 +46,10 @@ services:
       - mongodb
     networks:
       - chat_app_network
+    develop:
+      watch:
+        - action: rebuild
+          path: ./user-service
 
   chat-service:
     build:
@@ -56,6 +64,10 @@ services:
       - mongodb
     networks:
       - chat_app_network
+    develop:
+      watch:
+        - action: rebuild
+          path: ./chat-service
 
 networks:
   chat_app_network:

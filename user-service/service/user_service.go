@@ -104,7 +104,7 @@ func (s *UserService) LoginUser(ctx context.Context, r LoginRequest) (string, er
 		if err == mongo.ErrNoDocuments {
 			return "", ErrNoUser
 		}
-		return "", errors.New("unknown error while logging in")
+		return "", err
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(r.Password))
