@@ -46,6 +46,7 @@ func (repo *MongoChatRoomRepository) CreateRoom(ctx context.Context) (*ChatRoomE
 	newRoom := &ChatRoomEntity{
 		Id:       uuid.NewString(),
 		Messages: []Message{},
+		Users:    []UserPermissions{},
 	}
 
 	_, err := repo.collection.InsertOne(ctx, newRoom)
