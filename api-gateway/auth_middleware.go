@@ -51,14 +51,7 @@ func JWTMiddleware(authService *AuthService, next http.Handler) http.Handler {
 			return
 		}
 
-		username, ok := claims["username"].(string)
-		if !ok {
-			http.Error(w, "Invalid token claims: username missing", http.StatusUnauthorized)
-			return
-		}
-
 		r.Header.Set("X-User-Id", userId)
-		r.Header.Set("X-Username", username)
 
 		// Call the next handler
 		next.ServeHTTP(w, r)
