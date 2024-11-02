@@ -22,9 +22,12 @@ func (s *RoomService) GetRoom(ctx context.Context, roomId string) (*repository.C
 	return s.repo.GetRoom(ctx, roomId)
 }
 
-func (s *RoomService) AddUserToRoom(ctx context.Context, roomId string, userId string) error {
+func (s *RoomService) AddUserToRoom(ctx context.Context, roomId string, newUserId string, addingUserId string) error {
+	if err := s.validateAdminPrivileges(ctx, roomId, addingUserId); err != nil {
+		return err
+	}
 	userPermissions := repository.UserPermissions{
-		UserId: userId,
+		UserId: newUserId,
 		Role:   repository.Member,
 	}
 	return s.repo.InsertUserIntoRoom(ctx, roomId, userPermissions)
