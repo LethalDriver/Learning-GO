@@ -38,7 +38,6 @@ func (wsh *WebsocketHandler) HandleWebSocketUpgradeRequest(w http.ResponseWriter
 	roomId := r.PathValue("roomId")
 
 	userId := r.Header.Get("X-User-Id")
-	username := r.Header.Get("X-Username")
 
 	// Upgrade the HTTP connection to a WebSocket connection
 	conn, err := wsh.upgrader.Upgrade(w, r, nil)
@@ -48,5 +47,5 @@ func (wsh *WebsocketHandler) HandleWebSocketUpgradeRequest(w http.ResponseWriter
 	}
 	log.Println("WebSocket connection upgraded successfully")
 
-	wsh.chatService.ConnectToRoom(ctx, roomId, userId, username, conn)
+	wsh.chatService.ConnectToRoom(ctx, roomId, userId, conn)
 }

@@ -23,7 +23,7 @@ func NewChatService(roomRepo *repository.MongoChatRoomRepository, roomManager Ro
 	}
 }
 
-func (s *ChatService) ConnectToRoom(ctx context.Context, roomId, userId, username string, ws *websocket.Conn) error {
+func (s *ChatService) ConnectToRoom(ctx context.Context, roomId, userId string, ws *websocket.Conn) error {
 	_, err := s.roomRepo.GetRoom(ctx, roomId)
 	if err != nil {
 		if err != mongo.ErrNoDocuments {
@@ -31,8 +31,7 @@ func (s *ChatService) ConnectToRoom(ctx context.Context, roomId, userId, usernam
 		}
 	}
 	userDetails := repository.UserDetails{
-		Id:       userId,
-		Username: username,
+		Id: userId,
 	}
 	room := s.roomManager.ManageRoom(roomId)
 	go room.Run(s)

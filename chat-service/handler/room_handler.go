@@ -36,3 +36,5 @@ func (rh *RoomHandler) CreateRoom(w http.ResponseWriter, r *http.Request) {
 	writeJsonResponse(w, response)
 	w.WriteHeader(http.StatusCreated)
 }
+
+

@@ -54,8 +54,7 @@ type EmbeddedMedia struct {
 }
 
 type UserDetails struct {
-	Id       string `bson:"id" json:"id"`
-	Username string `bson:"username" json:"username"`
+	Id string `bson:"id" json:"id"`
 }
 
 type SeenMessage struct {
