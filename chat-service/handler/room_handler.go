@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"example.com/chat_app/chat_service/service"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type RoomHandler struct {
@@ -21,10 +20,6 @@ func (rh *RoomHandler) CreateRoom(w http.ResponseWriter, r *http.Request) {
 	//Repository import, should not be there, there should be a separate package for structs used across all layers
 	room, err := rh.roomService.CreateRoom(ctx, userId)
 	if err != nil {
-		if err == mongo.ErrNoDocuments {
-			w.WriteHeader(http.StatusNotFound)
-			return
-		}
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -36,5 +31,3 @@ func (rh *RoomHandler) CreateRoom(w http.ResponseWriter, r *http.Request) {
 	writeJsonResponse(w, response)
 	w.WriteHeader(http.StatusCreated)
 }
-
-
