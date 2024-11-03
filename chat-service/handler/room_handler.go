@@ -50,3 +50,42 @@ func (rh *RoomHandler) AddUsersToRoom(w http.ResponseWriter, r *http.Request) {
 	writeJsonResponse(w, response)
 	w.WriteHeader(http.StatusOK)
 }
+
+func (rh *RoomHandler) MakeUserAdmin(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	promotingUserId := r.Header.Get("X-User-Id")
+	roomId := r.PathValue("roomId")
+	newAdminId := r.PathValue("userId")
+	err := rh.roomService.MakeUserAdmin(ctx, roomId, newAdminId, promotingUserId)
+	if err != nil {
+		if err == service.ErrInsufficientPermissions {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
+func (rh *RoomHandler) DeleteUserFromRoom(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	requestingUserId := r.Header.Get("X-User-Id")
+	roomId := r.PathValue("roomId")
+	removedUserId := r.PathValue("userId")
+	err := rh.roomService.RemoveUserFromRoom(ctx, roomId, requestingUserId, removedUserId)
+	if err != nil {
+		if err == service.ErrInsufficientPermissions {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+	response := struct {
+		Message string `json:"message"`
+	}{
+		Message: "User removed from room",
+	}
+	writeJsonResponse(w, response)
+	w.WriteHeader(http.StatusOK)
+}
