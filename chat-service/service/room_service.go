@@ -65,9 +65,12 @@ func (s *RoomService) PromoteUserToAdmin(ctx context.Context, roomId string, pro
 	return s.repo.PromoteUserToAdmin(ctx, roomId, promotedUserId)
 }
 
-func (s *RoomService) MakeUserAdmin(ctx context.Context, roomId string, userId string) error {
+func (s *RoomService) MakeUserAdmin(ctx context.Context, roomId, newAdminId, promotingUserId string) error {
+	if err := s.validateAdminPrivileges(ctx, roomId, newAdminId); err != nil {
+		return err
+	}
 	userPermissions := repository.UserPermissions{
-		UserId: userId,
+		UserId: newAdminId,
 		Role:   repository.Admin,
 	}
 	return s.repo.InsertUserIntoRoom(ctx, roomId, userPermissions)
