@@ -24,22 +24,34 @@ func NewChatService(roomRepo *repository.MongoChatRoomRepository, roomManager Ro
 }
 
 func (s *ChatService) ConnectToRoom(ctx context.Context, roomId, userId string, ws *websocket.Conn) error {
-	_, err := s.roomRepo.GetRoom(ctx, roomId)
+	dbRoom, err := s.roomRepo.GetRoom(ctx, roomId)
 	if err != nil {
 		if err != mongo.ErrNoDocuments {
 			return err
 		}
 	}
+	if !checkIfUserBelongsToRoom(ctx, dbRoom, userId) {
+		return ErrInsufficientPermissions
+	}
 	userDetails := repository.UserDetails{
 		Id: userId,
 	}
-	room := s.roomManager.ManageRoom(roomId)
-	go room.Run(s)
+	memoryRoom := s.roomManager.ManageRoom(dbRoom.Id)
+	go memoryRoom.Run(s)
 
-	go handleConnection(ws, room, userDetails)
+	go handleConnection(ws, memoryRoom, userDetails)
 
 	log.Printf("Room: %s running", roomId)
 	return nil
+}
+
+func checkIfUserBelongsToRoom(ctx context.Context, room *repository.ChatRoomEntity, userId string) bool {
+	for _, user := range room.Users {
+		if user.UserId == userId {
+			return true
+		}
+	}
+	return false
 }
 
 func (s *ChatService) pumpExistingMessages(conn *Connection, messages []repository.Message) {

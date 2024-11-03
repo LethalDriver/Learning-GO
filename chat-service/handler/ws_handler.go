@@ -36,7 +36,6 @@ func NewWebsocketHandler(rs *service.ChatService) *WebsocketHandler {
 func (wsh *WebsocketHandler) HandleWebSocketUpgradeRequest(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	roomId := r.PathValue("roomId")
-
 	userId := r.Header.Get("X-User-Id")
 
 	// Upgrade the HTTP connection to a WebSocket connection
