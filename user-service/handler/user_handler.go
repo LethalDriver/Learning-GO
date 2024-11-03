@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 
+	"example.com/chat_app/user_service/dto"
 	"example.com/chat_app/user_service/service"
 )
 
@@ -14,8 +15,9 @@ type UserHandler struct {
 	s *service.UserService
 }
 
-type TokenResponse struct {
-	AccessToken string `json:"accessToken"`
+type LoginResponse struct {
+	User        dto.UserDto `json:"user"`
+	AccessToken string      `json:"accessToken"`
 }
 
 func NewUserHandler(s *service.UserService) *UserHandler {
@@ -45,7 +47,7 @@ func (h *UserHandler) HandleRegister(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
-	resp := &TokenResponse{
+	resp := &LoginResponse{
 		AccessToken: token,
 	}
 	err = writeResponse(w, resp)
@@ -66,7 +68,7 @@ func (h *UserHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := h.s.LoginUser(ctx, logReq)
+	dto, token, err := h.s.LoginUser(ctx, logReq)
 	if err != nil {
 		switch err {
 		case service.ErrNoUser:
@@ -79,7 +81,8 @@ func (h *UserHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp := &TokenResponse{
+	resp := &LoginResponse{
+		User:        *dto,
 		AccessToken: token,
 	}
 	err = writeResponse(w, resp)

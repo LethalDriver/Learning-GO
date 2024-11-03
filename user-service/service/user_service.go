@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"example.com/chat_app/user_service/dto"
 	"example.com/chat_app/user_service/repository"
 	"github.com/google/uuid"
 
@@ -98,26 +99,32 @@ func (s *UserService) RegisterUser(ctx context.Context, r RegistrationRequest) (
 	return token, nil
 }
 
-func (s *UserService) LoginUser(ctx context.Context, r LoginRequest) (string, error) {
+func (s *UserService) LoginUser(ctx context.Context, r LoginRequest) (*dto.UserDto, string, error) {
 	user, err := s.repo.GetByUsername(ctx, r.Username)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			return "", ErrNoUser
+			return nil, "", ErrNoUser
 		}
-		return "", err
+		return nil, "", err
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(r.Password))
 	if err != nil {
-		return "", ErrWrongPassword
+		return nil, "", ErrWrongPassword
 	}
 
 	token, err := s.jwt.GenerateToken(user.Id, user.Username)
 	if err != nil {
-		return "", fmt.Errorf("failed generating jwt token: %w", err)
+		return nil, "", fmt.Errorf("failed generating jwt token: %w", err)
 	}
 
-	return token, nil
+	userDto := &dto.UserDto{
+		Id:       user.Id,
+		Username: user.Username,
+		Email:    user.Email,
+	}
+
+	return userDto, token, nil
 }
 
 func (s *UserService) validateRegistrationRequest(r RegistrationRequest) error {
