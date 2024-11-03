@@ -60,5 +60,6 @@ func initializeRoutes(ws *handler.WebsocketHandler, rh *handler.RoomHandler) *ht
 	mux := http.NewServeMux()
 	mux.Handle("GET /room/{roomId}/connect", http.HandlerFunc(ws.HandleWebSocketUpgradeRequest))
 	mux.Handle("POST /room", http.HandlerFunc(rh.CreateRoom))
+	mux.Handle("POST /room/{roomId}/users/add", http.HandlerFunc(rh.AddUsersToRoom))
 	return mux
 }

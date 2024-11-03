@@ -31,3 +31,22 @@ func (rh *RoomHandler) CreateRoom(w http.ResponseWriter, r *http.Request) {
 	writeJsonResponse(w, response)
 	w.WriteHeader(http.StatusCreated)
 }
+
+func (rh *RoomHandler) AddUsersToRoom(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	addingUserId := r.Header.Get("X-User-Id")
+	roomId := r.PathValue("roomId")
+	newUsersIds := r.URL.Query()["userId"]
+	errsInsert, errPermission := rh.roomService.AddUsersToRoom(ctx, roomId, newUsersIds, addingUserId)
+	if errPermission != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+	response := struct {
+		Errors []error `json:"errors"`
+	}{
+		Errors: errsInsert,
+	}
+	writeJsonResponse(w, response)
+	w.WriteHeader(http.StatusOK)
+}

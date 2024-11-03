@@ -33,6 +33,24 @@ func (s *RoomService) AddUserToRoom(ctx context.Context, roomId string, newUserI
 	return s.repo.InsertUserIntoRoom(ctx, roomId, userPermissions)
 }
 
+func (s *RoomService) AddUsersToRoom(ctx context.Context, roomId string, newUsers []string, addingUserId string) ([]error, error) {
+	var dbInsertErrors []error
+	if err := s.validateAdminPrivileges(ctx, roomId, addingUserId); err != nil {
+		return nil, ErrInsufficientPermissions
+	}
+	for _, userId := range newUsers {
+		permission := repository.UserPermissions{
+			UserId: userId,
+			Role:   repository.Member,
+		}
+		err := s.repo.InsertUserIntoRoom(ctx, roomId, permission)
+		if err != nil {
+			dbInsertErrors = append(dbInsertErrors, err)
+		}
+	}
+	return dbInsertErrors, nil
+}
+
 func (s *RoomService) RemoveUserFromRoom(ctx context.Context, roomId, requestingUserId, removedUserId string) error {
 	if err := s.validateAdminPrivileges(ctx, roomId, requestingUserId); err != nil {
 		return err
