@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"log"
 	"time"
 
@@ -10,6 +11,8 @@ import (
 	"github.com/gorilla/websocket"
 	"go.mongodb.org/mongo-driver/mongo"
 )
+
+var RoomNotFound = errors.New("room not found")
 
 type ChatService struct {
 	roomRepo    repository.ChatRoomRepository
@@ -23,29 +26,33 @@ func NewChatService(roomRepo *repository.MongoChatRoomRepository, roomManager Ro
 	}
 }
 
-func (s *ChatService) ConnectToRoom(ctx context.Context, roomId, userId string, ws *websocket.Conn) error {
-	dbRoom, err := s.roomRepo.GetRoom(ctx, roomId)
-	if err != nil {
-		if err != mongo.ErrNoDocuments {
-			return err
-		}
-	}
-	if !checkIfUserBelongsToRoom(ctx, dbRoom, userId) {
-		return ErrInsufficientPermissions
-	}
+func (s *ChatService) ConnectToRoom(ctx context.Context, roomId, userId string, ws *websocket.Conn) {
+	memoryRoom := s.roomManager.ManageRoom(roomId)
+	go memoryRoom.Run(s)
+
 	userDetails := repository.UserDetails{
 		Id: userId,
 	}
-	memoryRoom := s.roomManager.ManageRoom(dbRoom.Id)
-	go memoryRoom.Run(s)
-
 	go handleConnection(ws, memoryRoom, userDetails)
 
 	log.Printf("Room: %s running", roomId)
+}
+
+func (s *ChatService) ValidateConnection(ctx context.Context, roomId, userId string) error {
+	dbRoom, err := s.roomRepo.GetRoom(ctx, roomId)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return RoomNotFound
+		}
+		return err
+	}
+	if !checkIfUserBelongsToRoom(dbRoom, userId) {
+		return ErrInsufficientPermissions
+	}
 	return nil
 }
 
-func checkIfUserBelongsToRoom(ctx context.Context, room *repository.ChatRoomEntity, userId string) bool {
+func checkIfUserBelongsToRoom(room *repository.ChatRoomEntity, userId string) bool {
 	for _, user := range room.Users {
 		if user.UserId == userId {
 			return true

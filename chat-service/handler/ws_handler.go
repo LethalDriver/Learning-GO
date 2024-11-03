@@ -38,6 +38,19 @@ func (wsh *WebsocketHandler) HandleWebSocketUpgradeRequest(w http.ResponseWriter
 	roomId := r.PathValue("roomId")
 	userId := r.Header.Get("X-User-Id")
 
+	if err := wsh.chatService.ValidateConnection(ctx, roomId, userId); err != nil {
+		log.Println("Failed to validate connection:", err)
+		switch err {
+		case service.RoomNotFound:
+			http.Error(w, "Room not found", http.StatusNotFound)
+		case service.ErrInsufficientPermissions:
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		default:
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+		}
+		return
+	}
+
 	// Upgrade the HTTP connection to a WebSocket connection
 	conn, err := wsh.upgrader.Upgrade(w, r, nil)
 	if err != nil {
