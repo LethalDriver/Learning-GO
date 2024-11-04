@@ -4,6 +4,7 @@ services:
   mongodb:
     image: mongo:latest
     container_name: mongodb
+    command: mongod --logpath /var/log/mongodb/mongod.log
     ports:
       - "27017:27017"
     environment:
