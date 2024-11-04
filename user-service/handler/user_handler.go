@@ -26,6 +26,24 @@ func NewUserHandler(s *service.UserService) *UserHandler {
 	}
 }
 
+func (h *UserHandler) HandleMe(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	userId := r.Header.Get("X-User-Id")
+	userDto, err := h.s.GetUserDto(ctx, userId)
+	if err != nil {
+		log.Printf("Failed getting user: %v", err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+	err = writeResponse(w, userDto)
+	if err != nil {
+		log.Printf("Failed writing user response: %v", err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
 func (h *UserHandler) HandleRegister(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
