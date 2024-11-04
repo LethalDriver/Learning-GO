@@ -109,10 +109,14 @@ func (repo *MongoChatRoomRepository) DeleteUserFromRoom(ctx context.Context, roo
 func (repo *MongoChatRoomRepository) GetUsersPermissions(ctx context.Context, roomId string, userId string) (*UserPermissions, error) {
 	// Define the aggregation pipeline
 	pipeline := mongo.Pipeline{
-		{{Key: "$match", Value: bson.D{{Key: "id", Value: roomId}}}},
-		{{Key: "$unwind", Value: bson.D{{Key: "path", Value: "$users"}}}},
-		{{Key: "$match", Value: bson.D{{Key: "users.userId", Value: userId}}}},
-		{{Key: "$project", Value: bson.D{{Key: "userPermissions", Value: "$users"}}}},
+		// Match the room with the specified ID
+		bson.D{{Key: "$match", Value: bson.D{{Key: "id", Value: roomId}}}},
+		// Unwind the users array
+		bson.D{{Key: "$unwind", Value: "$users"}},
+		// Match the specific user
+		bson.D{{Key: "$match", Value: bson.D{{Key: "users.userId", Value: userId}}}},
+		// Project the user permissions
+		bson.D{{Key: "$project", Value: bson.D{{Key: "userPermissions", Value: "$users"}}}},
 	}
 
 	// Execute the aggregation pipeline

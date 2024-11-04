@@ -28,8 +28,8 @@ type WsIncomingMessage struct {
 }
 
 type UserPermissions struct {
-	UserId string `json:"userId"`
-	Role   Role   `json:"permission"`
+	UserId string `bson:"userId" json:"userId"`
+	Role   Role   `bson:"role" json:"permission"`
 }
 
 type ChatRoomEntity struct {
