@@ -35,7 +35,7 @@ func (h *UserHandler) HandleMe(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
-	err = writeResponse(w, userDto)
+	err = writeJsonResponse(w, userDto)
 	if err != nil {
 		log.Printf("Failed writing user response: %v", err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
@@ -69,7 +69,7 @@ func (h *UserHandler) HandleRegister(w http.ResponseWriter, r *http.Request) {
 		AccessToken: token,
 		User:        *userDto,
 	}
-	err = writeResponse(w, resp)
+	err = writeJsonResponse(w, resp)
 	if err != nil {
 		log.Printf("Failed registering user %q: %v", regReq.Username, err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
@@ -104,7 +104,7 @@ func (h *UserHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 		User:        *dto,
 		AccessToken: token,
 	}
-	err = writeResponse(w, resp)
+	err = writeJsonResponse(w, resp)
 	if err != nil {
 		log.Printf("Failed writing login response: %v", err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
@@ -126,7 +126,8 @@ func parseRequest(r *http.Request, reqStruct any) error {
 	return nil
 }
 
-func writeResponse(w http.ResponseWriter, respStruct any) error {
+func writeJsonResponse(w http.ResponseWriter, respStruct any) error {
+	w.Header().Set("Content-Type", "application/json")
 	tokenJson, err := json.Marshal(respStruct)
 	if err != nil {
 		return fmt.Errorf("failed marshaling response: %v", err)
