@@ -32,6 +32,18 @@ func (rh *RoomHandler) CreateRoom(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
+func (rh *RoomHandler) GetRoom(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	roomId := r.PathValue("roomId")
+	room, err := rh.roomService.GetRoom(ctx, roomId)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	writeJsonResponse(w, room)
+	w.WriteHeader(http.StatusOK)
+}
+
 func (rh *RoomHandler) AddUsersToRoom(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	addingUserId := r.Header.Get("X-User-Id")
