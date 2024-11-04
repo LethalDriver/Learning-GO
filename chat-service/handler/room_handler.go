@@ -39,7 +39,7 @@ func (rh *RoomHandler) AddUsersToRoom(w http.ResponseWriter, r *http.Request) {
 	newUsersIds := r.URL.Query()["userId"]
 	errsInsert, errPermission := rh.roomService.AddUsersToRoom(ctx, roomId, newUsersIds, addingUserId)
 	if errPermission != nil {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		http.Error(w, "This action requires admin privileges", http.StatusForbidden)
 		return
 	}
 	response := struct {
@@ -59,7 +59,7 @@ func (rh *RoomHandler) MakeUserAdmin(w http.ResponseWriter, r *http.Request) {
 	err := rh.roomService.MakeUserAdmin(ctx, roomId, newAdminId, promotingUserId)
 	if err != nil {
 		if err == service.ErrInsufficientPermissions {
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			http.Error(w, "This action requires admin privileges", http.StatusForbidden)
 			return
 		}
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -76,7 +76,7 @@ func (rh *RoomHandler) DeleteUserFromRoom(w http.ResponseWriter, r *http.Request
 	err := rh.roomService.RemoveUserFromRoom(ctx, roomId, requestingUserId, removedUserId)
 	if err != nil {
 		if err == service.ErrInsufficientPermissions {
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			http.Error(w, "This action requires admin privileges", http.StatusForbidden)
 			return
 		}
 		http.Error(w, err.Error(), http.StatusInternalServerError)
