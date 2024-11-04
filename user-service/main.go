@@ -59,8 +59,8 @@ func main() {
 
 func initializeRoutes(u *handler.UserHandler) *http.ServeMux {
 	mux := http.NewServeMux()
-	mux.HandleFunc("POST auth/register", u.HandleRegister)
-	mux.HandleFunc("POST auth/login", u.HandleLogin)
-	mux.HandleFunc("GET users/me", u.HandleMe)
+	mux.HandleFunc("POST /auth/register", u.HandleRegister)
+	mux.HandleFunc("POST /auth/login", u.HandleLogin)
+	mux.HandleFunc("GET /users/me", u.HandleMe)
 	return mux
 }
