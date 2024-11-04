@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"example.com/chat_app/chat_service/dto"
 	"example.com/chat_app/chat_service/repository"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -18,8 +19,16 @@ func NewRoomService(repo repository.ChatRoomRepository) *RoomService {
 	return &RoomService{repo: repo}
 }
 
-func (s *RoomService) GetRoom(ctx context.Context, roomId string) (*repository.ChatRoomEntity, error) {
-	return s.repo.GetRoom(ctx, roomId)
+func (s *RoomService) GetRoomDto(ctx context.Context, roomId string, userId string) (*dto.RoomDto, error) {
+	room, err := s.repo.GetRoom(ctx, roomId)
+	if err != nil {
+		return nil, err
+	}
+	if !checkIfUserBelongsToRoom(room, userId) {
+		return nil, ErrInsufficientPermissions
+	}
+	roomDto := MapRoomEntityToDto(room)
+	return roomDto, nil
 }
 
 func (s *RoomService) AddUserToRoom(ctx context.Context, roomId string, newUserId string, addingUserId string) error {
@@ -86,16 +95,6 @@ func (s *RoomService) CreateRoom(ctx context.Context, userId string) (*repositor
 		return nil, err
 	}
 	return room, nil
-}
-
-func (s *RoomService) checkIfRoomExists(ctx context.Context, roomId string) bool {
-	_, err := s.repo.GetRoom(ctx, roomId)
-	if err != nil {
-		if errors.Is(err, mongo.ErrNoDocuments) {
-			return false
-		}
-	}
-	return true
 }
 
 func (s *RoomService) AddAdminToRoom(ctx context.Context, roomId string, userId string) error {

@@ -35,8 +35,13 @@ func (rh *RoomHandler) CreateRoom(w http.ResponseWriter, r *http.Request) {
 func (rh *RoomHandler) GetRoom(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	roomId := r.PathValue("roomId")
-	room, err := rh.roomService.GetRoom(ctx, roomId)
+	userId := r.Header.Get("X-User-Id")
+	room, err := rh.roomService.GetRoomDto(ctx, roomId, userId)
 	if err != nil {
+		if err == service.ErrInsufficientPermissions {
+			http.Error(w, "User doesn't belong to room", http.StatusForbidden)
+			return
+		}
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
