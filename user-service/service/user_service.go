@@ -42,6 +42,15 @@ type LoginRequest struct {
 	Password string `json:"password"`
 }
 
+func (s *UserService) GetUserDto(ctx context.Context, userId string) (*dto.UserDto, error) {
+	user, err := s.repo.GetById(ctx, userId)
+	if err != nil {
+		return nil, err
+	}
+	userDto := MapUserEntityToDto(user)
+	return userDto, nil
+}
+
 func (s *UserService) GetUser(ctx context.Context, username string) (*repository.UserEntity, error) {
 	user, err := s.repo.GetByUsername(ctx, username)
 	if err != nil {
@@ -96,11 +105,7 @@ func (s *UserService) RegisterUser(ctx context.Context, r RegistrationRequest) (
 		return nil, "", fmt.Errorf("failed generating jwt token: %w", err)
 	}
 
-	userDto := &dto.UserDto{
-		Id:       user.Id,
-		Username: user.Username,
-		Email:    user.Email,
-	}
+	userDto := MapUserEntityToDto(user)
 
 	return userDto, token, nil
 }
@@ -124,11 +129,7 @@ func (s *UserService) LoginUser(ctx context.Context, r LoginRequest) (*dto.UserD
 		return nil, "", fmt.Errorf("failed generating jwt token: %w", err)
 	}
 
-	userDto := &dto.UserDto{
-		Id:       user.Id,
-		Username: user.Username,
-		Email:    user.Email,
-	}
+	userDto := MapUserEntityToDto(user)
 
 	return userDto, token, nil
 }
