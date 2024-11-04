@@ -37,7 +37,7 @@ func (h *UserHandler) HandleRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := h.s.RegisterUser(ctx, regReq)
+	userDto, token, err := h.s.RegisterUser(ctx, regReq)
 	if err != nil {
 		if err == service.ErrUserExists {
 			http.Error(w, "User already exists", http.StatusConflict)
@@ -49,6 +49,7 @@ func (h *UserHandler) HandleRegister(w http.ResponseWriter, r *http.Request) {
 	}
 	resp := &LoginResponse{
 		AccessToken: token,
+		User:        *userDto,
 	}
 	err = writeResponse(w, resp)
 	if err != nil {

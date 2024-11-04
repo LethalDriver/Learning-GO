@@ -64,20 +64,20 @@ func (s *UserService) GetUserById(ctx context.Context, id string) (*repository.U
 	return user, nil
 }
 
-func (s *UserService) RegisterUser(ctx context.Context, r RegistrationRequest) (string, error) {
+func (s *UserService) RegisterUser(ctx context.Context, r RegistrationRequest) (*dto.UserDto, string, error) {
 	err := s.validateRegistrationRequest(r)
 	if err != nil {
-		return "", fmt.Errorf("registration request invalid: %w", err)
+		return nil, "", fmt.Errorf("registration request invalid: %w", err)
 	}
 
 	exists := s.checkIfUserExists(ctx, r.Username)
 	if exists {
-		return "", ErrUserExists
+		return nil, "", ErrUserExists
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(r.Password), bcrypt.DefaultCost)
 	if err != nil {
-		return "", fmt.Errorf("failed hashing password: %w", err)
+		return nil, "", fmt.Errorf("failed hashing password: %w", err)
 	}
 
 	user := &repository.UserEntity{
@@ -88,15 +88,21 @@ func (s *UserService) RegisterUser(ctx context.Context, r RegistrationRequest) (
 	}
 	err = s.repo.Save(ctx, user)
 	if err != nil {
-		return "", fmt.Errorf("failed saving user %q to the database: %w", user.Username, err)
+		return nil, "", fmt.Errorf("failed saving user %q to the database: %w", user.Username, err)
 	}
 
 	token, err := s.jwt.GenerateToken(user.Id, user.Username)
 	if err != nil {
-		return "", fmt.Errorf("failed generating jwt token: %w", err)
+		return nil, "", fmt.Errorf("failed generating jwt token: %w", err)
 	}
 
-	return token, nil
+	userDto := &dto.UserDto{
+		Id:       user.Id,
+		Username: user.Username,
+		Email:    user.Email,
+	}
+
+	return userDto, token, nil
 }
 
 func (s *UserService) LoginUser(ctx context.Context, r LoginRequest) (*dto.UserDto, string, error) {
