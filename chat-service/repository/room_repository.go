@@ -19,7 +19,7 @@ type ChatRoomRepository interface {
 	InsertUserIntoRoom(ctx context.Context, roomId string, user UserPermissions) error
 	DeleteUserFromRoom(ctx context.Context, roomId string, userId string) error
 	GetUsersPermissions(ctx context.Context, roomId string, userId string) (*UserPermissions, error)
-	PromoteUserToAdmin(ctx context.Context, roomId string, userId string) error
+	ChangeUserRole(ctx context.Context, roomId string, userId string, role Role) error
 }
 
 type MongoChatRoomRepository struct {
@@ -84,11 +84,11 @@ func (repo *MongoChatRoomRepository) InsertUserIntoRoom(ctx context.Context, roo
 	return err
 }
 
-func (repo *MongoChatRoomRepository) PromoteUserToAdmin(ctx context.Context, roomId string, userId string) error {
+func (repo *MongoChatRoomRepository) ChangeUserRole(ctx context.Context, roomId string, userId string, role Role) error {
 	filter := bson.M{"id": roomId, "users.userId": userId}
 	update := bson.M{
 		"$set": bson.M{
-			"users.$.role": Admin,
+			"users.$.role": role,
 		},
 	}
 	_, err := repo.collection.UpdateOne(ctx, filter, update)
