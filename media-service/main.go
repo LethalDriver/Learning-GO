@@ -4,6 +4,9 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"media_service/handler"
+	"media_service/repository"
+	"media_service/service"
 	"net/http"
 	"os"
 
@@ -28,23 +31,31 @@ func main() {
 		log.Fatal(err)
 	}
 
-	log.Println("Connected to MongoDB!")
+	fileRepository := repository.NewMongoFileRepository(client, "media", "images", "videos", "audios", "others")
+	storageService, err := service.NewAzureBlobStorageService()
+	if err != nil {
+		log.Fatal(err)
+	}
+	fileService := service.NewFileService(fileRepository, storageService)
 
-	// router := initializeRoutes()
+	fileHandler := handler.NewFileHandler(fileService)
+
+	router := initializeRoutes(*fileHandler)
 
 	port := os.Getenv("PORT")
 
 	server := &http.Server{
 		Addr:    fmt.Sprintf(":%s", port),
-		Handler: nil,
+		Handler: router,
 	}
 
 	log.Printf("Media Service listening on port %s...", port)
 	log.Fatal(server.ListenAndServe())
 }
 
-// func initializeRoutes() *http.ServeMux {
-// 	mux := http.NewServeMux()
-// 	mux.Handle("GET /image/{imageId}")
-// 	return mux
-// }
+func initializeRoutes(fh handler.FileHandler) *http.ServeMux {
+	mux := http.NewServeMux()
+	mux.Handle("GET /{roomId}/{mediaType}/{fileId}", http.HandlerFunc(fh.HandleGetFile))
+	mux.Handle("POST /{roomId}", http.HandlerFunc(fh.HandleMediaUpload))
+	return mux
+}
