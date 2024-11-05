@@ -74,6 +74,10 @@ func (s *RoomService) RemoveUserFromRoom(ctx context.Context, roomId, requesting
 	return s.repo.DeleteUserFromRoom(ctx, roomId, removedUserId)
 }
 
+func (s *RoomService) LeaveRoom(ctx context.Context, roomId, userId string) error {
+	return s.repo.DeleteUserFromRoom(ctx, roomId, userId)
+}
+
 func (s *RoomService) PromoteUserToAdmin(ctx context.Context, roomId string, promotingUserId, promotedUserId string) error {
 	if err := s.validateAdminPrivileges(ctx, roomId, promotingUserId); err != nil {
 		return err

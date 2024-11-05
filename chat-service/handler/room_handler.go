@@ -101,6 +101,18 @@ func (rh *RoomHandler) MakeUserAdmin(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+func (rh *RoomHandler) LeaveRoom(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	userId := r.Header.Get("X-User-Id")
+	roomId := r.PathValue("roomId")
+	err := rh.roomService.LeaveRoom(ctx, roomId, userId)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
 func (rh *RoomHandler) DeleteUserFromRoom(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	requestingUserId := r.Header.Get("X-User-Id")
