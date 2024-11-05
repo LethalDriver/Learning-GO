@@ -89,7 +89,24 @@ func (rh *RoomHandler) PromoteUser(w http.ResponseWriter, r *http.Request) {
 	promotingUserId := r.Header.Get("X-User-Id")
 	roomId := r.PathValue("roomId")
 	newAdminId := r.PathValue("userId")
-	err := rh.roomService.PromoteUserToAdmin(ctx, roomId, newAdminId, promotingUserId)
+	err := rh.roomService.PromoteUser(ctx, roomId, newAdminId, promotingUserId)
+	if err != nil {
+		if err == service.ErrInsufficientPermissions {
+			http.Error(w, "This action requires admin privileges", http.StatusForbidden)
+			return
+		}
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
+func (rh *RoomHandler) DemoteUser(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	demotingUserId := r.Header.Get("X-User-Id")
+	roomId := r.PathValue("roomId")
+	demotedUserId := r.PathValue("userId")
+	err := rh.roomService.DemoteUser(ctx, roomId, demotedUserId, demotingUserId)
 	if err != nil {
 		if err == service.ErrInsufficientPermissions {
 			http.Error(w, "This action requires admin privileges", http.StatusForbidden)

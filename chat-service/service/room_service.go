@@ -78,11 +78,18 @@ func (s *RoomService) LeaveRoom(ctx context.Context, roomId, userId string) erro
 	return s.repo.DeleteUserFromRoom(ctx, roomId, userId)
 }
 
-func (s *RoomService) PromoteUserToAdmin(ctx context.Context, roomId string, promotingUserId, promotedUserId string) error {
+func (s *RoomService) PromoteUser(ctx context.Context, roomId string, promotingUserId, promotedUserId string) error {
 	if err := s.validateAdminPrivileges(ctx, roomId, promotingUserId); err != nil {
 		return err
 	}
-	return s.repo.PromoteUserToAdmin(ctx, roomId, promotedUserId)
+	return s.repo.ChangeUserRole(ctx, roomId, promotedUserId, repository.Admin)
+}
+
+func (s *RoomService) DemoteUser(ctx context.Context, roomId, demotingUserId, demotedUserId string) error {
+	if err := s.validateAdminPrivileges(ctx, roomId, demotingUserId); err != nil {
+		return err
+	}
+	return s.repo.ChangeUserRole(ctx, roomId, demotedUserId, repository.Member)
 }
 
 func (s *RoomService) CreateRoom(ctx context.Context, userId string) (*repository.ChatRoomEntity, error) {
