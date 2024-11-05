@@ -70,6 +70,26 @@ services:
         - action: rebuild
           path: ./chat-service
 
+  media-service:
+    build:
+      context: .
+      dockerfile: ./media-service/Dockerfile
+    ports:
+      - "${MEDIA_SERVICE_PORT}:${MEDIA_SERVICE_PORT}"
+    environment:
+      - MONGO_URI=${MONGO_URI}
+      - PORT=${MEDIA_SERVICE_PORT}
+      - AZURE_STORAGE_ACCOUNT_NAME=${AZURE_STORAGE_ACCOUNT_NAME}
+      - AZURE_STORAGE_ACCOUNT_KEY=${AZURE_STORAGE_ACCOUNT_KEY}
+    depends_on:
+      - mongodb
+    networks:
+      - chat_app_network
+    develop:
+      watch:
+        - action: rebuild
+          path: ./media-service
+
 networks:
   chat_app_network:
     driver: bridge
