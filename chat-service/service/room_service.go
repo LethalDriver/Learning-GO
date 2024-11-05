@@ -85,17 +85,6 @@ func (s *RoomService) PromoteUserToAdmin(ctx context.Context, roomId string, pro
 	return s.repo.PromoteUserToAdmin(ctx, roomId, promotedUserId)
 }
 
-func (s *RoomService) MakeUserAdmin(ctx context.Context, roomId, newAdminId, promotingUserId string) error {
-	if err := s.validateAdminPrivileges(ctx, roomId, newAdminId); err != nil {
-		return err
-	}
-	userPermissions := repository.UserPermissions{
-		UserId: newAdminId,
-		Role:   repository.Admin,
-	}
-	return s.repo.InsertUserIntoRoom(ctx, roomId, userPermissions)
-}
-
 func (s *RoomService) CreateRoom(ctx context.Context, userId string) (*repository.ChatRoomEntity, error) {
 	room, err := s.repo.CreateRoom(ctx)
 	if err != nil {

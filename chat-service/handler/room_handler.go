@@ -84,12 +84,12 @@ func (rh *RoomHandler) AddUsersToRoom(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func (rh *RoomHandler) MakeUserAdmin(w http.ResponseWriter, r *http.Request) {
+func (rh *RoomHandler) PromoteUser(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	promotingUserId := r.Header.Get("X-User-Id")
 	roomId := r.PathValue("roomId")
 	newAdminId := r.PathValue("userId")
-	err := rh.roomService.MakeUserAdmin(ctx, roomId, newAdminId, promotingUserId)
+	err := rh.roomService.PromoteUserToAdmin(ctx, roomId, newAdminId, promotingUserId)
 	if err != nil {
 		if err == service.ErrInsufficientPermissions {
 			http.Error(w, "This action requires admin privileges", http.StatusForbidden)
