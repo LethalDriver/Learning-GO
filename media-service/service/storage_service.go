@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"media_service/repository"
+	"os"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob"
 )
@@ -31,7 +32,9 @@ type AzureBlobStorageService struct {
 	serviceClient *azblob.Client
 }
 
-func NewAzureBlobStorageService(accountName, accountKey string) (*AzureBlobStorageService, error) {
+func NewAzureBlobStorageService() (*AzureBlobStorageService, error) {
+	accountName := os.Getenv("AZURE_STORAGE_ACCOUNT_NAME")
+	accountKey := os.Getenv("AZURE_STORAGE_ACCOUNT_KEY")
 	credential, err := azblob.NewSharedKeyCredential(accountName, accountKey)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create credential: %w", err)
