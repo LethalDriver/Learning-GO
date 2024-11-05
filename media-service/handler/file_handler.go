@@ -9,7 +9,11 @@ import (
 )
 
 type FileHandler struct {
-	service service.FileService
+	service *service.FileService
+}
+
+func NewFileHandler(s *service.FileService) *FileHandler {
+	return &FileHandler{service: s}
 }
 
 func (h *FileHandler) HandleMediaUpload(w http.ResponseWriter, r *http.Request) {

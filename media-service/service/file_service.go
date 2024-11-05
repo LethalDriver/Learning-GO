@@ -23,6 +23,10 @@ type FileService struct {
 	storage MediaStorageService
 }
 
+func NewFileService(repo repository.FileRepository, storage MediaStorageService) *FileService {
+	return &FileService{repo: repo, storage: storage}
+}
+
 func (s *FileService) CreateFile(ctx context.Context, file multipart.File, header *multipart.FileHeader, sentBy string, roomId string) (*repository.MediaFile, error) {
 	id := uuid.New().String()
 	mediaId := uuid.New().String()
