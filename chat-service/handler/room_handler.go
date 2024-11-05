@@ -49,6 +49,22 @@ func (rh *RoomHandler) GetRoom(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+func (rh *RoomHandler) DeleteRoom(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	roomId := r.PathValue("roomId")
+	userId := r.Header.Get("X-User-Id")
+	err := rh.roomService.DeleteRoom(ctx, roomId, userId)
+	if err != nil {
+		if err == service.ErrInsufficientPermissions {
+			http.Error(w, "This action requires admin privileges", http.StatusForbidden)
+			return
+		}
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
 func (rh *RoomHandler) AddUsersToRoom(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	addingUserId := r.Header.Get("X-User-Id")

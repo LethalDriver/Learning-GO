@@ -31,6 +31,13 @@ func (s *RoomService) GetRoomDto(ctx context.Context, roomId string, userId stri
 	return roomDto, nil
 }
 
+func (s *RoomService) DeleteRoom(ctx context.Context, roomId string, userId string) error {
+	if err := s.validateAdminPrivileges(ctx, roomId, userId); err != nil {
+		return err
+	}
+	return s.repo.DeleteRoom(ctx, roomId)
+}
+
 func (s *RoomService) AddUserToRoom(ctx context.Context, roomId string, newUserId string, addingUserId string) error {
 	if err := s.validateAdminPrivileges(ctx, roomId, addingUserId); err != nil {
 		return err
