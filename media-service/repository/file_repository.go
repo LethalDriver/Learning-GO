@@ -15,36 +15,19 @@ type FileRepository interface {
 }
 
 type MongoFileRepository struct {
-	collections map[MediaType]*mongo.Collection
+	collection *mongo.Collection
 }
 
-func NewMongoFileRepository(client *mongo.Client, dbName, imageColl, videoColl, audioColl, othersColl string) *MongoFileRepository {
+func NewMongoFileRepository(client *mongo.Client, dbName string) *MongoFileRepository {
 	return &MongoFileRepository{
-		collections: map[MediaType]*mongo.Collection{
-			Image: client.Database(dbName).Collection(imageColl),
-			Video: client.Database(dbName).Collection(videoColl),
-			Audio: client.Database(dbName).Collection(audioColl),
-			Other: client.Database(dbName).Collection(othersColl),
-		},
+		collection: client.Database(dbName).Collection("media"),
 	}
-}
-
-func (repo *MongoFileRepository) getCollection(mediaType MediaType) (*mongo.Collection, error) {
-	collection, exists := repo.collections[mediaType]
-	if !exists {
-		return nil, fmt.Errorf("unsupported media type: %v", mediaType)
-	}
-	return collection, nil
 }
 
 func (repo *MongoFileRepository) GetFile(ctx context.Context, id string, mediaType MediaType) (*MediaFile, error) {
 	var file MediaFile
 	filter := bson.M{"id": id}
-	collection, err := repo.getCollection(mediaType)
-	if err != nil {
-		return nil, err
-	}
-	err = collection.FindOne(ctx, filter).Decode(&file)
+	err := repo.collection.FindOne(ctx, filter).Decode(&file)
 	if err != nil {
 		return nil, err
 	}
@@ -53,11 +36,7 @@ func (repo *MongoFileRepository) GetFile(ctx context.Context, id string, mediaTy
 
 func (repo *MongoFileRepository) DeleteFile(ctx context.Context, id string, mediaType MediaType) error {
 	filter := bson.M{"id": id}
-	collection, err := repo.getCollection(mediaType)
-	if err != nil {
-		return err
-	}
-	_, err = collection.DeleteOne(ctx, filter)
+	_, err := repo.collection.DeleteOne(ctx, filter)
 	if err != nil {
 		return fmt.Errorf("error deleting file: %w", err)
 	}
@@ -65,11 +44,7 @@ func (repo *MongoFileRepository) DeleteFile(ctx context.Context, id string, medi
 }
 
 func (repo *MongoFileRepository) SaveFile(ctx context.Context, file *MediaFile, mediaType MediaType) error {
-	collection, err := repo.getCollection(mediaType)
-	if err != nil {
-		return err
-	}
-	_, err = collection.InsertOne(ctx, file)
+	_, err := repo.collection.InsertOne(ctx, file)
 	if err != nil {
 		return fmt.Errorf("error creating file: %w", err)
 	}

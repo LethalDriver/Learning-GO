@@ -31,7 +31,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fileRepository := repository.NewMongoFileRepository(client, "media", "images", "videos", "audios", "others")
+	fileRepository := repository.NewMongoFileRepository(client, "mediadb")
 	storageService, err := service.NewAzureBlobStorageService()
 	if err != nil {
 		log.Fatal(err)
