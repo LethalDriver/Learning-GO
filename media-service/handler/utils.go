@@ -21,12 +21,14 @@ func parseRequest(r *http.Request, reqStruct any) error {
 	return nil
 }
 
-func writeResponse(w http.ResponseWriter, respStruct any) error {
-	tokenJson, err := json.Marshal(respStruct)
+func writeJsonResponse(w http.ResponseWriter, respStruct any, code int) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(code)
+	jsonBytes, err := json.Marshal(respStruct)
 	if err != nil {
 		return fmt.Errorf("failed marshaling response: %v", err)
 	}
-	_, err = w.Write(tokenJson)
+	_, err = w.Write(jsonBytes)
 	if err != nil {
 		return fmt.Errorf("failed writing to response: %v", err)
 	}

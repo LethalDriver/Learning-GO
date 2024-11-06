@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"encoding/json"
 	"fmt"
 	"media_service/repository"
 	"media_service/service"
@@ -39,8 +38,11 @@ func (h *FileHandler) HandleMediaUpload(w http.ResponseWriter, r *http.Request) 
 		http.Error(w, "Unable to upload file", http.StatusInternalServerError)
 		return
 	}
-	writeResponse(w, createdFile)
-	w.WriteHeader(http.StatusCreated)
+
+	if err := writeJsonResponse(w, createdFile, http.StatusCreated); err != nil {
+		http.Error(w, "Unable to encode response", http.StatusInternalServerError)
+		return
+	}
 }
 
 func (h *FileHandler) HandleGetFile(w http.ResponseWriter, r *http.Request) {
@@ -61,10 +63,6 @@ func (h *FileHandler) HandleGetFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; mediaId=%s", fileMetadata.MediaId))
-
-	// Create a JSON response with metadata and binary data
 	response := struct {
 		Metadata *repository.MediaFile `json:"metadata"`
 		File     []byte                `json:"file"`
@@ -73,11 +71,10 @@ func (h *FileHandler) HandleGetFile(w http.ResponseWriter, r *http.Request) {
 		File:     fileData,
 	}
 
-	// Encode the response as JSON
-	if err := json.NewEncoder(w).Encode(response); err != nil {
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; mediaId=%s", fileMetadata.MediaId))
+
+	if err := writeJsonResponse(w, response, http.StatusOK); err != nil {
 		http.Error(w, "Unable to encode response", http.StatusInternalServerError)
 		return
 	}
-
-	w.WriteHeader(http.StatusOK)
 }
