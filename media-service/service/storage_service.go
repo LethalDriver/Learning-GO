@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"media_service/repository"
+	"media_service/structs"
 	"os"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob"
@@ -24,8 +24,8 @@ func (m MediaType) String() string {
 }
 
 type MediaStorageService interface {
-	DownloadFile(ctx context.Context, mediaType repository.MediaType, mediaId string) ([]byte, error)
-	UploadFile(ctx context.Context, mediaType repository.MediaType, blobId string, data []byte) error
+	DownloadFile(ctx context.Context, mediaType structs.MediaType, mediaId string) ([]byte, error)
+	UploadFile(ctx context.Context, mediaType structs.MediaType, blobId string, data []byte) error
 }
 
 type AzureBlobStorageService struct {
@@ -51,7 +51,7 @@ func NewAzureBlobStorageService() (*AzureBlobStorageService, error) {
 	}, nil
 }
 
-func (s *AzureBlobStorageService) DownloadFile(ctx context.Context, mediaType repository.MediaType, mediaId string) ([]byte, error) {
+func (s *AzureBlobStorageService) DownloadFile(ctx context.Context, mediaType structs.MediaType, mediaId string) ([]byte, error) {
 	get, err := s.serviceClient.DownloadStream(ctx, mediaType.String()+"s", mediaId, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to download blob: %w", err)
@@ -72,7 +72,7 @@ func (s *AzureBlobStorageService) DownloadFile(ctx context.Context, mediaType re
 	return downloadedData.Bytes(), nil
 }
 
-func (s *AzureBlobStorageService) UploadFile(ctx context.Context, mediaType repository.MediaType, blobId string, data []byte) error {
+func (s *AzureBlobStorageService) UploadFile(ctx context.Context, mediaType structs.MediaType, blobId string, data []byte) error {
 	_, err := s.serviceClient.UploadStream(ctx, mediaType.String()+"s", blobId, bytes.NewReader(data), nil)
 	if err != nil {
 		return fmt.Errorf("failed to upload blob: %w", err)

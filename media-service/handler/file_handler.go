@@ -2,8 +2,8 @@ package handler
 
 import (
 	"fmt"
-	"media_service/repository"
 	"media_service/service"
+	"media_service/structs"
 	"net/http"
 )
 
@@ -51,7 +51,7 @@ func (h *FileHandler) HandleGetFile(w http.ResponseWriter, r *http.Request) {
 	roomId := r.PathValue("roomId")
 	fileId := r.PathValue("fileId")
 
-	mediaType, err := repository.ParseMediaType(mediaTypeStr)
+	mediaType, err := structs.ParseMediaType(mediaTypeStr)
 	if err != nil {
 		http.Error(w, "Invalid media type", http.StatusBadRequest)
 		return
@@ -64,8 +64,8 @@ func (h *FileHandler) HandleGetFile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response := struct {
-		Metadata *repository.MediaFile `json:"metadata"`
-		File     []byte                `json:"file"`
+		Metadata *structs.MediaFile `json:"metadata"`
+		File     []byte             `json:"file"`
 	}{
 		Metadata: fileMetadata,
 		File:     fileData,

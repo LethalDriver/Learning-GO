@@ -5,12 +5,13 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"media_service/repository"
 	"mime/multipart"
 	"os"
 	"path/filepath"
 	"slices"
 	"time"
+
+	"media_service/structs"
 
 	"github.com/google/uuid"
 )
@@ -18,16 +19,22 @@ import (
 var ErrPermissionDenied = errors.New("you don't have permissions")
 var ErrFileNotInRoom = errors.New("does not belong to room")
 
+type FileRepository interface {
+	GetFile(ctx context.Context, id string, mediaType structs.MediaType) (*structs.MediaFile, error)
+	DeleteFile(ctx context.Context, userId string, mediaType structs.MediaType) error
+	SaveFile(ctx context.Context, file *structs.MediaFile, mediaType structs.MediaType) error
+}
+
 type FileService struct {
-	repo    repository.FileRepository
+	repo    FileRepository
 	storage MediaStorageService
 }
 
-func NewFileService(repo repository.FileRepository, storage MediaStorageService) *FileService {
+func NewFileService(repo FileRepository, storage MediaStorageService) *FileService {
 	return &FileService{repo: repo, storage: storage}
 }
 
-func (s *FileService) CreateFile(ctx context.Context, file multipart.File, header *multipart.FileHeader, sentBy string, roomId string) (*repository.MediaFile, error) {
+func (s *FileService) CreateFile(ctx context.Context, file multipart.File, header *multipart.FileHeader, sentBy string, roomId string) (*structs.MediaFile, error) {
 	id := uuid.New().String()
 	mediaId := uuid.New().String()
 	mediaType := determineMediaType(header.Filename)
@@ -42,11 +49,11 @@ func (s *FileService) CreateFile(ctx context.Context, file multipart.File, heade
 		return nil, fmt.Errorf("unable to save file to storage: %w", err)
 	}
 
-	mediaFile := &repository.MediaFile{
+	mediaFile := &structs.MediaFile{
 		Id:      id,
 		Type:    mediaType,
 		MediaId: mediaId,
-		Metadata: &repository.FileMetadata{
+		Metadata: &structs.FileMetadata{
 			CreatedAt: time.Now(),
 			CreatedBy: sentBy,
 			Size:      header.Size,
@@ -64,7 +71,7 @@ func (s *FileService) CreateFile(ctx context.Context, file multipart.File, heade
 
 }
 
-func (s *FileService) DeleteFile(ctx context.Context, id string, roomId string, userId string, mediaType repository.MediaType) error {
+func (s *FileService) DeleteFile(ctx context.Context, id string, roomId string, userId string, mediaType structs.MediaType) error {
 	file, err := s.repo.GetFile(ctx, id, mediaType)
 	if err != nil {
 		return fmt.Errorf("failed fetching file %q from database: %w", id, err)
@@ -78,7 +85,7 @@ func (s *FileService) DeleteFile(ctx context.Context, id string, roomId string, 
 	return s.repo.DeleteFile(ctx, userId, mediaType)
 }
 
-func (s *FileService) GetFile(ctx context.Context, id string, roomId string, mediaType repository.MediaType) (*repository.MediaFile, []byte, error) {
+func (s *FileService) GetFile(ctx context.Context, id string, roomId string, mediaType structs.MediaType) (*structs.MediaFile, []byte, error) {
 	// Fetch the file metadata
 	file, err := s.repo.GetFile(ctx, id, mediaType)
 	if err != nil {
@@ -96,14 +103,14 @@ func (s *FileService) GetFile(ctx context.Context, id string, roomId string, med
 	return file, imageData, nil
 }
 
-func checkIfFileInRoom(file *repository.MediaFile, roomId string) error {
+func checkIfFileInRoom(file *structs.MediaFile, roomId string) error {
 	if !slices.Contains(file.Metadata.RoomIds, roomId) {
 		return fmt.Errorf("file %q %w: %q", file.Id, ErrFileNotInRoom, roomId)
 	}
 	return nil
 }
 
-func constructLocalUrl(id string, mediaType repository.MediaType) (string, error) {
+func constructLocalUrl(id string, mediaType structs.MediaType) (string, error) {
 	baseUrl := os.Getenv("BASE_URL")
 	if baseUrl == "" {
 		return "", fmt.Errorf("BASE_URL environment variable not set")
@@ -111,16 +118,16 @@ func constructLocalUrl(id string, mediaType repository.MediaType) (string, error
 	return fmt.Sprintf("%s/%s/%s", baseUrl, mediaType.String(), id), nil
 }
 
-func determineMediaType(filename string) repository.MediaType {
+func determineMediaType(filename string) structs.MediaType {
 	ext := filepath.Ext(filename)
 	switch ext {
 	case ".jpg", ".jpeg", ".png", ".gif":
-		return repository.Image
+		return structs.Image
 	case ".mp4", ".avi", ".mov":
-		return repository.Video
+		return structs.Video
 	case ".mp3", ".wav":
-		return repository.Audio
+		return structs.Audio
 	default:
-		return repository.Other
+		return structs.Other
 	}
 }
