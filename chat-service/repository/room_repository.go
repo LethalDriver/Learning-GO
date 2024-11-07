@@ -4,23 +4,13 @@ import (
 	"context"
 	"fmt"
 
+	"example.com/chat_app/chat_service/structs"
 	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type ChatRoomRepository interface {
-	CreateRoom(ctx context.Context) (*ChatRoomEntity, error)
-	GetRoom(ctx context.Context, id string) (*ChatRoomEntity, error)
-	DeleteRoom(ctx context.Context, id string) error
-	AddMessageToRoom(ctx context.Context, roomId string, message *Message) error
-	InsertSeenBy(ctx context.Context, roomId string, messageId string, userId string) error
-	DeleteMessage(ctx context.Context, roomId string, messageId string) error
-	InsertUserIntoRoom(ctx context.Context, roomId string, user UserPermissions) error
-	DeleteUserFromRoom(ctx context.Context, roomId string, userId string) error
-	GetUsersPermissions(ctx context.Context, roomId string, userId string) (*UserPermissions, error)
-	ChangeUserRole(ctx context.Context, roomId string, userId string, role Role) error
-}
+
 
 type MongoChatRoomRepository struct {
 	collection *mongo.Collection
@@ -31,8 +21,8 @@ func NewMongoChatRoomRepository(client *mongo.Client, dbName, collectionName str
 	return &MongoChatRoomRepository{collection: collection}
 }
 
-func (repo *MongoChatRoomRepository) GetRoom(ctx context.Context, id string) (*ChatRoomEntity, error) {
-	var room ChatRoomEntity
+func (repo *MongoChatRoomRepository) GetRoom(ctx context.Context, id string) (*structs.ChatRoomEntity, error) {
+	var room structs.ChatRoomEntity
 	filter := bson.M{"id": id}
 	err := repo.collection.FindOne(ctx, filter).Decode(&room)
 	if err != nil {
@@ -41,12 +31,12 @@ func (repo *MongoChatRoomRepository) GetRoom(ctx context.Context, id string) (*C
 	return &room, nil
 }
 
-func (repo *MongoChatRoomRepository) CreateRoom(ctx context.Context) (*ChatRoomEntity, error) {
+func (repo *MongoChatRoomRepository) CreateRoom(ctx context.Context) (*structs.ChatRoomEntity, error) {
 	// Create a new room if it does not exist
-	newRoom := &ChatRoomEntity{
+	newRoom := &structs.ChatRoomEntity{
 		Id:       uuid.NewString(),
-		Messages: []Message{},
-		Users:    []UserPermissions{},
+		Messages: []structs.Message{},
+		Users:    []structs.UserPermissions{},
 	}
 
 	_, err := repo.collection.InsertOne(ctx, newRoom)
@@ -62,7 +52,7 @@ func (repo *MongoChatRoomRepository) DeleteRoom(ctx context.Context, id string) 
 	return err
 }
 
-func (repo *MongoChatRoomRepository) AddMessageToRoom(ctx context.Context, roomId string, message *Message) error {
+func (repo *MongoChatRoomRepository) AddMessageToRoom(ctx context.Context, roomId string, message *structs.Message) error {
 	filter := bson.M{"id": roomId}
 	update := bson.M{
 		"$push": bson.M{
@@ -73,7 +63,7 @@ func (repo *MongoChatRoomRepository) AddMessageToRoom(ctx context.Context, roomI
 	return err
 }
 
-func (repo *MongoChatRoomRepository) InsertUserIntoRoom(ctx context.Context, roomId string, user UserPermissions) error {
+func (repo *MongoChatRoomRepository) InsertUserIntoRoom(ctx context.Context, roomId string, user structs.UserPermissions) error {
 	filter := bson.M{"id": roomId}
 	update := bson.M{
 		"$addToSet": bson.M{
@@ -84,7 +74,7 @@ func (repo *MongoChatRoomRepository) InsertUserIntoRoom(ctx context.Context, roo
 	return err
 }
 
-func (repo *MongoChatRoomRepository) ChangeUserRole(ctx context.Context, roomId string, userId string, role Role) error {
+func (repo *MongoChatRoomRepository) ChangeUserRole(ctx context.Context, roomId string, userId string, role structs.Role) error {
 	filter := bson.M{"id": roomId, "users.userId": userId}
 	update := bson.M{
 		"$set": bson.M{
@@ -106,7 +96,7 @@ func (repo *MongoChatRoomRepository) DeleteUserFromRoom(ctx context.Context, roo
 	return err
 }
 
-func (repo *MongoChatRoomRepository) GetUsersPermissions(ctx context.Context, roomId string, userId string) (*UserPermissions, error) {
+func (repo *MongoChatRoomRepository) GetUsersPermissions(ctx context.Context, roomId string, userId string) (*structs.UserPermissions, error) {
 	// Define the aggregation pipeline
 	pipeline := mongo.Pipeline{
 		// Match the room with the specified ID
@@ -131,7 +121,7 @@ func (repo *MongoChatRoomRepository) GetUsersPermissions(ctx context.Context, ro
 	}
 
 	var result struct {
-		UserPermissions UserPermissions `bson:"userPermissions"`
+		UserPermissions structs.UserPermissions `bson:"userPermissions"`
 	}
 	if err := cursor.Decode(&result); err != nil {
 		return nil, err

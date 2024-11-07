@@ -5,17 +5,16 @@ import (
 	"errors"
 
 	"example.com/chat_app/chat_service/structs"
-	"example.com/chat_app/chat_service/repository"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
 var ErrInsufficientPermissions = errors.New("insufficient permissions")
 
 type RoomService struct {
-	repo repository.ChatRoomRepository
+	repo ChatRoomRepository
 }
 
-func NewRoomService(repo repository.ChatRoomRepository) *RoomService {
+func NewRoomService(repo ChatRoomRepository) *RoomService {
 	return &RoomService{repo: repo}
 }
 
@@ -42,9 +41,9 @@ func (s *RoomService) AddUserToRoom(ctx context.Context, roomId string, newUserI
 	if err := s.validateAdminPrivileges(ctx, roomId, addingUserId); err != nil {
 		return err
 	}
-	userPermissions := repository.UserPermissions{
+	userPermissions := structs.UserPermissions{
 		UserId: newUserId,
-		Role:   repository.Member,
+		Role:   structs.Member,
 	}
 	return s.repo.InsertUserIntoRoom(ctx, roomId, userPermissions)
 }
@@ -55,9 +54,9 @@ func (s *RoomService) AddUsersToRoom(ctx context.Context, roomId string, newUser
 		return nil, ErrInsufficientPermissions
 	}
 	for _, userId := range newUsers {
-		permission := repository.UserPermissions{
+		permission := structs.UserPermissions{
 			UserId: userId,
-			Role:   repository.Member,
+			Role:   structs.Member,
 		}
 		err := s.repo.InsertUserIntoRoom(ctx, roomId, permission)
 		if err != nil {
@@ -82,17 +81,17 @@ func (s *RoomService) PromoteUser(ctx context.Context, roomId string, promotingU
 	if err := s.validateAdminPrivileges(ctx, roomId, promotingUserId); err != nil {
 		return err
 	}
-	return s.repo.ChangeUserRole(ctx, roomId, promotedUserId, repository.Admin)
+	return s.repo.ChangeUserRole(ctx, roomId, promotedUserId, structs.Admin)
 }
 
 func (s *RoomService) DemoteUser(ctx context.Context, roomId, demotingUserId, demotedUserId string) error {
 	if err := s.validateAdminPrivileges(ctx, roomId, demotingUserId); err != nil {
 		return err
 	}
-	return s.repo.ChangeUserRole(ctx, roomId, demotedUserId, repository.Member)
+	return s.repo.ChangeUserRole(ctx, roomId, demotedUserId, structs.Member)
 }
 
-func (s *RoomService) CreateRoom(ctx context.Context, userId string) (*repository.ChatRoomEntity, error) {
+func (s *RoomService) CreateRoom(ctx context.Context, userId string) (*structs.ChatRoomEntity, error) {
 	room, err := s.repo.CreateRoom(ctx)
 	if err != nil {
 		return nil, err
@@ -105,9 +104,9 @@ func (s *RoomService) CreateRoom(ctx context.Context, userId string) (*repositor
 }
 
 func (s *RoomService) AddAdminToRoom(ctx context.Context, roomId string, userId string) error {
-	userPermission := repository.UserPermissions{
+	userPermission := structs.UserPermissions{
 		UserId: userId,
-		Role:   repository.Admin,
+		Role:   structs.Admin,
 	}
 	return s.repo.InsertUserIntoRoom(ctx, roomId, userPermission)
 }
@@ -120,7 +119,7 @@ func (s *RoomService) validateAdminPrivileges(ctx context.Context, roomId, userI
 		}
 		return err
 	}
-	if userPermissions.Role != repository.Admin {
+	if userPermissions.Role != structs.Admin {
 		return ErrInsufficientPermissions
 	}
 	return nil

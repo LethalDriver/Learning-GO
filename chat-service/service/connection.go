@@ -5,29 +5,29 @@ import (
 	"log"
 	"sync"
 
-	"example.com/chat_app/chat_service/repository"
+	"example.com/chat_app/chat_service/structs"
 	"github.com/gorilla/websocket"
 )
 
 type Connection struct {
 	ws          *websocket.Conn
-	user        repository.UserDetails
-	sendMessage chan repository.Message
-	sendSeen    chan repository.SeenMessage
-	sendDelete  chan repository.DeleteMessage
+	user        structs.UserDetails
+	sendMessage chan structs.Message
+	sendSeen    chan structs.SeenMessage
+	sendDelete  chan structs.DeleteMessage
 	room        *ChatRoom
 }
 
-func handleConnection(ws *websocket.Conn, room *ChatRoom, user repository.UserDetails) error {
+func handleConnection(ws *websocket.Conn, room *ChatRoom, user structs.UserDetails) error {
 	clientIP := ws.RemoteAddr().String()
 	log.Printf("Handling connection from %s", clientIP)
 
 	conn := &Connection{
 		ws:          ws,
 		user:        user,
-		sendMessage: make(chan repository.Message, 256),
-		sendSeen:    make(chan repository.SeenMessage, 256),
-		sendDelete:  make(chan repository.DeleteMessage, 256),
+		sendMessage: make(chan structs.Message, 256),
+		sendSeen:    make(chan structs.SeenMessage, 256),
+		sendDelete:  make(chan structs.DeleteMessage, 256),
 		room:        room,
 	}
 
@@ -63,25 +63,25 @@ func (c *Connection) readPump() {
 		}
 		log.Printf("Read message from connection: %q, address: %p", string(messageBytes), c)
 
-		var incomingMessage repository.WsIncomingMessage
+		var incomingMessage structs.WsIncomingMessage
 		if err := c.unmarshalMessage(messageBytes, &incomingMessage); err != nil {
 			log.Printf("Error unmarshalling incoming message: %v", err)
 			break
 		}
 		data := incomingMessage.Data
 		switch incomingMessage.Type {
-		case repository.TypeTextMessage:
-			var msg repository.Message
+		case structs.TypeTextMessage:
+			var msg structs.Message
 			if err := json.Unmarshal(data, &msg); err != nil {
 				log.Printf("Error unmarshalling message data: %v", err)
 				break
 			}
 			msg.SentBy = c.user
 			c.room.Text <- msg
-			log.Printf("Received Message: %+v", msg)
+			log.Printf("Received structs.Message: %+v", msg)
 
-		case repository.TypeSeenMessage:
-			var seenMessage repository.SeenMessage
+		case structs.TypeSeenMessage:
+			var seenMessage structs.SeenMessage
 			if err := json.Unmarshal(data, &seenMessage); err != nil {
 				log.Printf("Error unmarshalling seen message: %v", err)
 				break
@@ -90,8 +90,8 @@ func (c *Connection) readPump() {
 			log.Printf("Received SeenUpdate: %+v", seenMessage)
 			c.room.Seen <- seenMessage
 
-		case repository.TypeDeleteMessage:
-			var deleteMessage repository.DeleteMessage
+		case structs.TypeDeleteMessage:
+			var deleteMessage structs.DeleteMessage
 			if err := json.Unmarshal(data, &deleteMessage); err != nil {
 				log.Printf("Error unmarshalling delete message: %v", err)
 				break
