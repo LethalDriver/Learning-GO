@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"example.com/chat_app/chat_service/dto"
+	"example.com/chat_app/chat_service/structs"
 	"example.com/chat_app/chat_service/repository"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -19,7 +19,7 @@ func NewRoomService(repo repository.ChatRoomRepository) *RoomService {
 	return &RoomService{repo: repo}
 }
 
-func (s *RoomService) GetRoomDto(ctx context.Context, roomId string, userId string) (*dto.RoomDto, error) {
+func (s *RoomService) GetRoomDto(ctx context.Context, roomId string, userId string) (*structs.RoomDto, error) {
 	room, err := s.repo.GetRoom(ctx, roomId)
 	if err != nil {
 		return nil, err

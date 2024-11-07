@@ -1,4 +1,4 @@
-package dto
+package structs
 
 type RoomDto struct {
 	Id      string    `json:"id"`
