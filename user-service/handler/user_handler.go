@@ -7,8 +7,8 @@ import (
 	"log"
 	"net/http"
 
-	"example.com/chat_app/user_service/dto"
 	"example.com/chat_app/user_service/service"
+	"example.com/chat_app/user_service/structs"
 )
 
 type UserHandler struct {
@@ -16,8 +16,8 @@ type UserHandler struct {
 }
 
 type LoginResponse struct {
-	User        dto.UserDto `json:"user"`
-	AccessToken string      `json:"accessToken"`
+	User        structs.UserDto `json:"user"`
+	AccessToken string          `json:"accessToken"`
 }
 
 func NewUserHandler(s *service.UserService) *UserHandler {

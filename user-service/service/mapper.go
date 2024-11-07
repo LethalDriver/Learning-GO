@@ -1,12 +1,11 @@
 package service
 
 import (
-	"example.com/chat_app/user_service/dto"
-	"example.com/chat_app/user_service/repository"
+	"example.com/chat_app/user_service/structs"
 )
 
-func MapUserEntityToDto(user *repository.UserEntity) *dto.UserDto {
-	return &dto.UserDto{
+func MapUserEntityToDto(user *structs.UserEntity) *structs.UserDto {
+	return &structs.UserDto{
 		Id:       user.Id,
 		Username: user.Username,
 		Email:    user.Email,

@@ -5,8 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	"example.com/chat_app/user_service/dto"
-	"example.com/chat_app/user_service/repository"
+	"example.com/chat_app/user_service/structs"
 	"github.com/google/uuid"
 
 	"go.mongodb.org/mongo-driver/mongo"
@@ -19,12 +18,18 @@ var (
 	ErrUserExists    = errors.New("user already exists")
 )
 
+type UserRepository interface {
+	GetById(ctx context.Context, id string) (*structs.UserEntity, error)
+	GetByUsername(ctx context.Context, username string) (*structs.UserEntity, error)
+	Save(ctx context.Context, user *structs.UserEntity) error
+}
+
 type UserService struct {
-	repo repository.UserRepository
+	repo UserRepository
 	jwt  *JwtService
 }
 
-func NewUserService(repo repository.UserRepository, jwt *JwtService) *UserService {
+func NewUserService(repo UserRepository, jwt *JwtService) *UserService {
 	return &UserService{
 		repo: repo,
 		jwt:  jwt,
@@ -42,7 +47,7 @@ type LoginRequest struct {
 	Password string `json:"password"`
 }
 
-func (s *UserService) GetUserDto(ctx context.Context, userId string) (*dto.UserDto, error) {
+func (s *UserService) GetUserDto(ctx context.Context, userId string) (*structs.UserDto, error) {
 	user, err := s.repo.GetById(ctx, userId)
 	if err != nil {
 		return nil, err
@@ -51,7 +56,7 @@ func (s *UserService) GetUserDto(ctx context.Context, userId string) (*dto.UserD
 	return userDto, nil
 }
 
-func (s *UserService) GetUser(ctx context.Context, username string) (*repository.UserEntity, error) {
+func (s *UserService) GetUser(ctx context.Context, username string) (*structs.UserEntity, error) {
 	user, err := s.repo.GetByUsername(ctx, username)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
@@ -62,7 +67,7 @@ func (s *UserService) GetUser(ctx context.Context, username string) (*repository
 	return user, nil
 }
 
-func (s *UserService) GetUserById(ctx context.Context, id string) (*repository.UserEntity, error) {
+func (s *UserService) GetUserById(ctx context.Context, id string) (*structs.UserEntity, error) {
 	user, err := s.repo.GetById(ctx, id)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
@@ -73,7 +78,7 @@ func (s *UserService) GetUserById(ctx context.Context, id string) (*repository.U
 	return user, nil
 }
 
-func (s *UserService) RegisterUser(ctx context.Context, r RegistrationRequest) (*dto.UserDto, string, error) {
+func (s *UserService) RegisterUser(ctx context.Context, r RegistrationRequest) (*structs.UserDto, string, error) {
 	err := s.validateRegistrationRequest(r)
 	if err != nil {
 		return nil, "", fmt.Errorf("registration request invalid: %w", err)
@@ -89,7 +94,7 @@ func (s *UserService) RegisterUser(ctx context.Context, r RegistrationRequest) (
 		return nil, "", fmt.Errorf("failed hashing password: %w", err)
 	}
 
-	user := &repository.UserEntity{
+	user := &structs.UserEntity{
 		Id:       uuid.New().String(),
 		Username: r.Username,
 		Email:    r.Email,
@@ -110,7 +115,7 @@ func (s *UserService) RegisterUser(ctx context.Context, r RegistrationRequest) (
 	return userDto, token, nil
 }
 
-func (s *UserService) LoginUser(ctx context.Context, r LoginRequest) (*dto.UserDto, string, error) {
+func (s *UserService) LoginUser(ctx context.Context, r LoginRequest) (*structs.UserDto, string, error) {
 	user, err := s.repo.GetByUsername(ctx, r.Username)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {

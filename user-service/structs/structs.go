@@ -1,4 +1,4 @@
-package dto
+package structs
 
 type UserDto struct {
 	Id       string `json:"id"`
