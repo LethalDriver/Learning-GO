@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"media_service/handler"
-	"media_service/repository"
 	"media_service/service"
 	"net/http"
 	"os"
@@ -31,14 +30,12 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fileRepository := repository.NewMongoFileRepository(client, "mediadb")
 	storageService, err := service.NewAzureBlobStorageService()
 	if err != nil {
 		log.Fatal(err)
 	}
-	fileService := service.NewFileService(fileRepository, storageService)
 
-	fileHandler := handler.NewFileHandler(fileService)
+	fileHandler := handler.NewFileHandler(storageService)
 
 	router := initializeRoutes(*fileHandler)
 
@@ -55,7 +52,7 @@ func main() {
 
 func initializeRoutes(fh handler.FileHandler) *http.ServeMux {
 	mux := http.NewServeMux()
-	mux.Handle("GET /{roomId}/{mediaType}/{fileId}", http.HandlerFunc(fh.HandleGetFile))
+	mux.Handle("GET /{roomId}/{mediaType}/{fileId}", http.HandlerFunc(fh.HandleMediaUpload))
 	mux.Handle("POST /{roomId}", http.HandlerFunc(fh.HandleMediaUpload))
 	return mux
 }

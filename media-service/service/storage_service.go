@@ -4,29 +4,11 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"media_service/structs"
 	"os"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob"
+	"github.com/google/uuid"
 )
-
-type MediaType int
-
-const (
-	Image MediaType = iota
-	Video
-	Audio
-	Other
-)
-
-func (m MediaType) String() string {
-	return [...]string{"images", "videos", "audios", "others"}[m]
-}
-
-type MediaStorageService interface {
-	DownloadFile(ctx context.Context, mediaType structs.MediaType, mediaId string) ([]byte, error)
-	UploadFile(ctx context.Context, mediaType structs.MediaType, blobId string, data []byte) error
-}
 
 type AzureBlobStorageService struct {
 	serviceClient *azblob.Client
@@ -51,8 +33,8 @@ func NewAzureBlobStorageService() (*AzureBlobStorageService, error) {
 	}, nil
 }
 
-func (s *AzureBlobStorageService) DownloadFile(ctx context.Context, mediaType structs.MediaType, mediaId string) ([]byte, error) {
-	get, err := s.serviceClient.DownloadStream(ctx, mediaType.String()+"s", mediaId, nil)
+func (s *AzureBlobStorageService) DownloadFile(ctx context.Context, containerName, mediaId string) ([]byte, error) {
+	get, err := s.serviceClient.DownloadStream(ctx, containerName, mediaId, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to download blob: %w", err)
 	}
@@ -72,11 +54,12 @@ func (s *AzureBlobStorageService) DownloadFile(ctx context.Context, mediaType st
 	return downloadedData.Bytes(), nil
 }
 
-func (s *AzureBlobStorageService) UploadFile(ctx context.Context, mediaType structs.MediaType, blobId string, data []byte) error {
-	_, err := s.serviceClient.UploadStream(ctx, mediaType.String()+"s", blobId, bytes.NewReader(data), nil)
+func (s *AzureBlobStorageService) UploadFile(ctx context.Context, containerName string, data []byte) (string, error) {
+	blobId := uuid.NewString()
+	_, err := s.serviceClient.UploadStream(ctx, containerName, blobId, bytes.NewReader(data), nil)
 	if err != nil {
-		return fmt.Errorf("failed to upload blob: %w", err)
+		return "", fmt.Errorf("failed to upload blob: %w", err)
 	}
 
-	return nil
+	return blobId, nil
 }
