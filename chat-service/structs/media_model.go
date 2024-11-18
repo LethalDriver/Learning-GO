@@ -45,15 +45,11 @@ func ParseMediaType(s string) (MediaType, error) {
 }
 
 type MediaFile struct {
-	Id       string        `bson:"id" json:"id"`
-	Type     MediaType     `bson:"type" json:"type"`
-	MediaId  string        `bson:"media_id" json:"media_id"`
-	Metadata *FileMetadata `bson:"metadata" json:"metadata"`
-}
-
-type FileMetadata struct {
+	Id        string    `bson:"id" json:"id"`
+	RoomId    string    `bson:"roomId" json:"roomId"`
+	Type      MediaType `bson:"type" json:"type"`
+	BlobId    string    `bson:"blobId" json:"blobId"`
 	CreatedAt time.Time `bson:"createdAt" json:"createdAt"`
 	CreatedBy string    `bson:"createdBy" json:"createdBy"`
 	Size      int64     `bson:"size" json:"size"`
-	RoomIds   []string  `bson:"roomIds" json:"roomIds"`
 }
