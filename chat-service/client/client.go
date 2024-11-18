@@ -69,6 +69,8 @@ func (c *MediaServiceClient) DownloadMedia(ctx context.Context, blobId, mediaTyp
 		return nil, fmt.Errorf("failed to create download image request: %v", err)
 	}
 
+	log.Printf("Sending request to %s", req.URL.String())
+
 	resp, err := c.HTTPClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to send dowload image request: %v", err)
