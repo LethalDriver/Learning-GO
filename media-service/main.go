@@ -52,7 +52,7 @@ func main() {
 
 func initializeRoutes(fh handler.FileHandler) *http.ServeMux {
 	mux := http.NewServeMux()
-	mux.Handle("GET /{mediaType}/{fileId}", http.HandlerFunc(fh.HandleMediaDownload))
+	mux.Handle("GET /{mediaType}/{blobId}", http.HandlerFunc(fh.HandleMediaDownload))
 	mux.Handle("POST /{mediaType}", http.HandlerFunc(fh.HandleMediaUpload))
 	return mux
 }

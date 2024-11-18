@@ -56,13 +56,14 @@ func (s *MediaService) CreateMediaResource(ctx context.Context, roomId, mediaTyp
 }
 
 func (s *MediaService) GetMedia(ctx context.Context, id, mediaTypeStr, roomId string) (*structs.MediaFile, []byte, error) {
-	imageBytes, err := s.client.DownloadMedia(ctx, id, mediaTypeStr)
+	fileMetadata, err := s.repo.GetFile(ctx, id)
 	if err != nil {
 		return nil, nil, err
 	}
-	file, err := s.repo.GetFile(ctx, id)
+	imageBytes, err := s.client.DownloadMedia(ctx, fileMetadata.BlobId, mediaTypeStr)
 	if err != nil {
 		return nil, nil, err
 	}
-	return file, imageBytes, nil
+
+	return fileMetadata, imageBytes, nil
 }
