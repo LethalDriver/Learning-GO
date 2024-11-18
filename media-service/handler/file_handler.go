@@ -46,8 +46,8 @@ func (h *FileHandler) HandleMediaUpload(w http.ResponseWriter, r *http.Request) 
 
 func (h *FileHandler) HandleMediaDownload(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	mediaType := r.URL.Query().Get("mediaType")
-	blobId := r.URL.Query().Get("blobId")
+	mediaType := r.PathValue("mediaType")
+	blobId := r.PathValue("blobId")
 
 	fileBytes, err := h.service.DownloadFile(ctx, mediaType, blobId)
 	if err != nil {
