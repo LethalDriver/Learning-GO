@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob"
@@ -55,9 +56,11 @@ func (s *AzureBlobStorageService) DownloadFile(ctx context.Context, containerNam
 }
 
 func (s *AzureBlobStorageService) UploadFile(ctx context.Context, containerName string, data []byte) (string, error) {
+	log.Printf("Uploading file to container %s", containerName)
 	blobId := uuid.NewString()
 	_, err := s.serviceClient.UploadStream(ctx, containerName, blobId, bytes.NewReader(data), nil)
 	if err != nil {
+		log.Printf("failed to upload blob: %v", err)
 		return "", fmt.Errorf("failed to upload blob: %w", err)
 	}
 
