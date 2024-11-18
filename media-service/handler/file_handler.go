@@ -16,7 +16,7 @@ func NewFileHandler(s *service.AzureBlobStorageService) *FileHandler {
 
 func (h *FileHandler) HandleMediaUpload(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	mediaType := r.URL.Query().Get("mediaType")
+	mediaType := r.PathValue("mediaType")
 
 	fileBytes, err := io.ReadAll(r.Body)
 	if err != nil {
