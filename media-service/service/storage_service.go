@@ -35,8 +35,10 @@ func NewAzureBlobStorageService() (*AzureBlobStorageService, error) {
 }
 
 func (s *AzureBlobStorageService) DownloadFile(ctx context.Context, containerName, mediaId string) ([]byte, error) {
+	log.Printf("Downloading file %s from container %s", mediaId, containerName)
 	get, err := s.serviceClient.DownloadStream(ctx, containerName, mediaId, nil)
 	if err != nil {
+		log.Printf("failed to download blob: %v", err)
 		return nil, fmt.Errorf("failed to download blob: %w", err)
 	}
 
