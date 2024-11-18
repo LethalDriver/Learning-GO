@@ -15,8 +15,8 @@ type MediaRepository interface {
 }
 
 type Client interface {
-	UploadMedia(ctx context.Context, roomId string, mediaType string, mediaBytes []byte) (string, error)
-	DownloadMedia(ctx context.Context, blobId string, mediaType string, roomId string) ([]byte, error)
+	UploadMedia(ctx context.Context, mediaType string, mediaBytes []byte) (string, error)
+	DownloadMedia(ctx context.Context, blobId, mediaType string) ([]byte, error)
 }
 
 type MediaService struct {
@@ -32,7 +32,7 @@ func NewMediaService(repo MediaRepository, client Client) *MediaService {
 }
 
 func (s *MediaService) CreateMediaResource(ctx context.Context, roomId, mediaTypeStr, userId string, mediaBytes []byte) (*structs.MediaFile, error) {
-	blobId, err := s.client.UploadMedia(ctx, roomId, mediaTypeStr, mediaBytes)
+	blobId, err := s.client.UploadMedia(ctx, mediaTypeStr, mediaBytes)
 	if err != nil {
 		return nil, err
 	}
@@ -55,6 +55,14 @@ func (s *MediaService) CreateMediaResource(ctx context.Context, roomId, mediaTyp
 	return file, nil
 }
 
-func (s *MediaService) GetMedia(ctx context.Context, id string) (*structs.MediaFile, error) {
-	return s.repo.GetFile(ctx, id)
+func (s *MediaService) GetMedia(ctx context.Context, id, mediaTypeStr, roomId string) (*structs.MediaFile, []byte, error) {
+	imageBytes, err := s.client.DownloadMedia(ctx, id, mediaTypeStr)
+	if err != nil {
+		return nil, nil, err
+	}
+	file, err := s.repo.GetFile(ctx, id)
+	if err != nil {
+		return nil, nil, err
+	}
+	return file, imageBytes, nil
 }

@@ -27,8 +27,8 @@ func NewClient() (*MediaServiceClient, error) {
 	}, nil
 }
 
-func (c *MediaServiceClient) UploadMedia(ctx context.Context, roomId string, mediaType string, mediaBytes []byte) (string, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.getMediaURL(roomId, mediaType, ""), nil)
+func (c *MediaServiceClient) UploadMedia(ctx context.Context, mediaType string, mediaBytes []byte) (string, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.getMediaURL(mediaType, ""), nil)
 	if err != nil {
 		return "", fmt.Errorf("failed to create upload image request: %v", err)
 	}
@@ -63,8 +63,8 @@ func (c *MediaServiceClient) UploadMedia(ctx context.Context, roomId string, med
 	return payload.BlobId, nil
 }
 
-func (c *MediaServiceClient) DownloadMedia(ctx context.Context, roomId, blobId, mediaType string) ([]byte, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.getMediaURL(roomId, mediaType, blobId), nil)
+func (c *MediaServiceClient) DownloadMedia(ctx context.Context, blobId, mediaType string) ([]byte, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.getMediaURL(mediaType, blobId), nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create download image request: %v", err)
 	}
@@ -82,9 +82,9 @@ func (c *MediaServiceClient) DownloadMedia(ctx context.Context, roomId, blobId, 
 	return io.ReadAll(resp.Body)
 }
 
-func (c *MediaServiceClient) getMediaURL(roomId, mediaType, blobId string) string {
+func (c *MediaServiceClient) getMediaURL(mediaType, blobId string) string {
 	if blobId == "" {
-		return fmt.Sprintf("%s/%s/%s", c.BaseURL, roomId, mediaType)
+		return fmt.Sprintf("%s/%s", c.BaseURL, mediaType)
 	}
-	return fmt.Sprintf("%s/%s/%s/%s", c.BaseURL, roomId, mediaType, blobId)
+	return fmt.Sprintf("%s/%s/%s", c.BaseURL, mediaType, blobId)
 }
