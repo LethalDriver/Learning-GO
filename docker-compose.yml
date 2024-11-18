@@ -61,6 +61,7 @@ services:
     environment:
       - MONGO_URI=${MONGO_URI}
       - PORT=${CHAT_SERVICE_PORT}
+      - MEDIA_SERVICE_URL=${MEDIA_SERVICE_URL}
     depends_on:
       - mongodb
     networks:
