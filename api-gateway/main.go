@@ -39,6 +39,7 @@ func main() {
 	log.Fatal(server.ListenAndServe())
 }
 
+// proxyHandler creates a new reverse proxy handler that forwards requests to the target URL.
 func proxyHandler(target string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		url, err := url.Parse(target)

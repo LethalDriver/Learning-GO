@@ -11,18 +11,14 @@ import (
 	"github.com/golang-jwt/jwt"
 )
 
-type ContextKey string
-
-const (
-	UserIdKey   ContextKey = "userId"
-	UsernameKey ContextKey = "username"
-)
-
+// AuthService provides methods for JWT token validation.
 type AuthService struct {
 	publicKey *rsa.PublicKey
 }
 
 // JWTMiddleware is the authorization middleware
+// It reads the JWT token from the Authorization header, validates the token, and extracts the user ID from the token claims.
+// The user ID is then appended to X-User-Id header in the request.
 func JWTMiddleware(authService *AuthService, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get("Authorization")
@@ -30,15 +26,12 @@ func JWTMiddleware(authService *AuthService, next http.Handler) http.Handler {
 			http.Error(w, "Authorization header missing", http.StatusUnauthorized)
 			return
 		}
-
-		// Extract the token from the "Bearer <token>" format
 		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 		if tokenString == authHeader {
 			http.Error(w, "Invalid authorization header format", http.StatusUnauthorized)
 			return
 		}
 
-		// Validate the token
 		claims, err := authService.ValidateTokenWithClaims(tokenString)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Invalid token: %v", err), http.StatusUnauthorized)
@@ -53,16 +46,13 @@ func JWTMiddleware(authService *AuthService, next http.Handler) http.Handler {
 
 		r.Header.Set("X-User-Id", userId)
 
-		// Call the next handler
 		next.ServeHTTP(w, r)
 	})
 }
 
 // ValidateTokenWithClaims validates the token and returns the claims if the token is valid.
 func (s *AuthService) ValidateTokenWithClaims(tokenString string) (jwt.MapClaims, error) {
-	// Parse and verify the token
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (any, error) {
-		// Ensure the token's signing method is RSA
 		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
@@ -73,12 +63,10 @@ func (s *AuthService) ValidateTokenWithClaims(tokenString string) (jwt.MapClaims
 		return nil, fmt.Errorf("failed to parse token: %v", err)
 	}
 
-	// Check if the token is valid
 	if !token.Valid {
 		return nil, errors.New("invalid token")
 	}
 
-	// Extract and return the claims
 	if claims, ok := token.Claims.(jwt.MapClaims); ok {
 		return claims, nil
 	}
