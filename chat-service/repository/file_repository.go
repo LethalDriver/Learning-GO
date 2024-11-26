@@ -13,9 +13,9 @@ type MongoFileRepository struct {
 	collection *mongo.Collection
 }
 
-func NewMongoFileRepository(client *mongo.Client, dbName string) *MongoFileRepository {
+func NewMongoFileRepository(client *mongo.Client, dbName, collection string) *MongoFileRepository {
 	return &MongoFileRepository{
-		collection: client.Database(dbName).Collection("media"),
+		collection: client.Database(dbName).Collection(collection),
 	}
 }
 

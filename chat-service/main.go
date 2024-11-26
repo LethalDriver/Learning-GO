@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 
+	"example.com/chat_app/chat_service/client"
 	"example.com/chat_app/chat_service/handler"
 	"example.com/chat_app/chat_service/repository"
 	"example.com/chat_app/chat_service/service"
@@ -25,27 +26,35 @@ func main() {
 
 	mongoClientOption := options.Client().ApplyURI(mongoUri)
 
-	client, err := mongo.Connect(context.TODO(), mongoClientOption)
+	mongoClient, err := mongo.Connect(context.TODO(), mongoClientOption)
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer client.Disconnect(context.TODO())
+	defer mongoClient.Disconnect(context.TODO())
 
-	err = client.Ping(context.TODO(), nil)
+	err = mongoClient.Ping(context.TODO(), nil)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	chatRoomRepo := repository.NewMongoChatRoomRepository(client, "chatdb", "chatrooms")
+	chatRoomRepo := repository.NewMongoChatRoomRepository(mongoClient, "chatdb", "chatrooms")
+	mediaRepo := repository.NewMongoFileRepository(mongoClient, "chatdb", "mediafiles")
+
+	mediaServiceClient, err := client.NewClient()
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	roomManager := service.NewRoomManager()
 	chatService := service.NewChatService(chatRoomRepo, roomManager)
 	roomService := service.NewRoomService(chatRoomRepo)
+	mediaService := service.NewMediaService(mediaRepo, mediaServiceClient)
 
 	wsHandler := handler.NewWebsocketHandler(chatService)
 	roomHandler := handler.NewRoomHandler(roomService)
+	mediaHandler := handler.NewMediaHandler(mediaService)
 
-	router := initializeRoutes(wsHandler, roomHandler) // configure routes
+	router := initializeRoutes(wsHandler, roomHandler, mediaHandler) // configure routes
 
 	server := &http.Server{
 		Addr:    fmt.Sprintf(":%s", port),
@@ -56,7 +65,7 @@ func main() {
 	log.Fatal(server.ListenAndServe())
 }
 
-func initializeRoutes(ws *handler.WebsocketHandler, rh *handler.RoomHandler) *http.ServeMux {
+func initializeRoutes(ws *handler.WebsocketHandler, rh *handler.RoomHandler, mh *handler.MediaHandler) *http.ServeMux {
 	mux := http.NewServeMux()
 	mux.Handle("GET /room/{roomId}/connect", http.HandlerFunc(ws.HandleWebSocketUpgradeRequest))
 	mux.Handle("GET /room/{roomId}", http.HandlerFunc(rh.GetRoom))
@@ -67,5 +76,7 @@ func initializeRoutes(ws *handler.WebsocketHandler, rh *handler.RoomHandler) *ht
 	mux.Handle("PATCH /room/{roomId}/users/{userId}/demote", http.HandlerFunc(rh.DemoteUser))
 	mux.Handle("DELETE /room/{roomId}/users/{userId}", http.HandlerFunc(rh.DeleteUserFromRoom))
 	mux.Handle("DELETE /room/{roomId}/users/me", http.HandlerFunc(rh.LeaveRoom))
+	mux.Handle("POST /room/{roomId}/{mediaType}", http.HandlerFunc(mh.UploadMedia))
+	mux.Handle("GET /room/{roomId}/{mediaType}/{mediaId}", http.HandlerFunc(mh.GetMedia))
 	return mux
 }

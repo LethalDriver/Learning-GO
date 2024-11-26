@@ -7,7 +7,8 @@ import (
 )
 
 type RoomHandler struct {
-	roomService *service.RoomService
+	roomService  *service.RoomService
+	mediaService *service.MediaService
 }
 
 func NewRoomHandler(rs *service.RoomService) *RoomHandler {
