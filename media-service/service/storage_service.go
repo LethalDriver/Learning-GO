@@ -15,6 +15,8 @@ type AzureBlobStorageService struct {
 	serviceClient *azblob.Client
 }
 
+// NewAzureBlobStorageService creates a new AzureBlobStorageService.
+// It initializes the service with the required Azure Blob Storage account credentials read from environment variables.
 func NewAzureBlobStorageService() (*AzureBlobStorageService, error) {
 	accountName := os.Getenv("AZURE_STORAGE_ACCOUNT_NAME")
 	accountKey := os.Getenv("AZURE_STORAGE_ACCOUNT_KEY")
@@ -34,6 +36,7 @@ func NewAzureBlobStorageService() (*AzureBlobStorageService, error) {
 	}, nil
 }
 
+// DownloadFile downloads a file from the specified container.
 func (s *AzureBlobStorageService) DownloadFile(ctx context.Context, containerName, mediaId string) ([]byte, error) {
 	log.Printf("Downloading file %s from container %s", mediaId, containerName)
 	get, err := s.serviceClient.DownloadStream(ctx, containerName, mediaId, nil)
@@ -57,6 +60,7 @@ func (s *AzureBlobStorageService) DownloadFile(ctx context.Context, containerNam
 	return downloadedData.Bytes(), nil
 }
 
+// UploadFile uploads a file to the specified container.
 func (s *AzureBlobStorageService) UploadFile(ctx context.Context, containerName string, data []byte) (string, error) {
 	log.Printf("Uploading file to container %s", containerName)
 	blobId := uuid.NewString()

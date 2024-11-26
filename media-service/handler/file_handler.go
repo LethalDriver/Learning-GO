@@ -6,14 +6,18 @@ import (
 	"net/http"
 )
 
+// FileHandler handles file upload and download requests.
 type FileHandler struct {
 	service *service.AzureBlobStorageService
 }
 
+// NewFileHandler creates a new FileHandler with the provided AzureBlobStorageService.
 func NewFileHandler(s *service.AzureBlobStorageService) *FileHandler {
 	return &FileHandler{service: s}
 }
 
+// HandleMediaUpload handles file upload requests.
+// It reads the file from the request body and uploads it to the specified media type container.
 func (h *FileHandler) HandleMediaUpload(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	mediaType := r.PathValue("mediaType")
@@ -24,14 +28,12 @@ func (h *FileHandler) HandleMediaUpload(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	// Stream the file directly to Azure Blob Storage
 	blobId, err := h.service.UploadFile(ctx, mediaType, fileBytes)
 	if err != nil {
 		http.Error(w, "Unable to upload file to storage", http.StatusInternalServerError)
 		return
 	}
 
-	// Create a response with the blob ID
 	response := struct {
 		BlobId string `json:"blobId"`
 	}{
@@ -44,6 +46,8 @@ func (h *FileHandler) HandleMediaUpload(w http.ResponseWriter, r *http.Request) 
 	}
 }
 
+// HandleMediaDownload handles file download requests.
+// It retrieves the file from the specified media type container and writes it to the response.
 func (h *FileHandler) HandleMediaDownload(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	mediaType := r.PathValue("mediaType")
