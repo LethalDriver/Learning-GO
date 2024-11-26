@@ -6,19 +6,22 @@ import (
 	"example.com/chat_app/chat_service/service"
 )
 
+// RoomHandler handles room-related requests.
 type RoomHandler struct {
 	roomService  *service.RoomService
 	mediaService *service.MediaService
 }
 
+// NewRoomHandler creates a new RoomHandler with the provided RoomService.
 func NewRoomHandler(rs *service.RoomService) *RoomHandler {
 	return &RoomHandler{roomService: rs}
 }
 
+// CreateRoom handles room creation requests.
+// It creates a new room with a UUID and returns the id.
 func (rh *RoomHandler) CreateRoom(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	userId := r.Header.Get("X-User-Id")
-	//Repository import, should not be there, there should be a separate package for structs used across all layers
 	room, err := rh.roomService.CreateRoom(ctx, userId)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -33,6 +36,9 @@ func (rh *RoomHandler) CreateRoom(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
+// GetRoom returns the room information for the specified room ID.
+// It returns the room DTO if the user is a member of the room.
+// If the user is not a member of the room, it returns a 403 Forbidden error.
 func (rh *RoomHandler) GetRoom(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	roomId := r.PathValue("roomId")
@@ -50,6 +56,8 @@ func (rh *RoomHandler) GetRoom(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+// DeleteRoom deletes the room with the specified room ID.
+// If requesting user is not its admin it returns a 403 Forbidden error.
 func (rh *RoomHandler) DeleteRoom(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	roomId := r.PathValue("roomId")
@@ -66,6 +74,9 @@ func (rh *RoomHandler) DeleteRoom(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+// AddUsersToRoom adds the specified users to the room with the specified room ID.
+// It returns a list of errors for each user that could not be added to the room.
+// If the requesting user is not an admin of the room, it returns a 403 Forbidden error.
 func (rh *RoomHandler) AddUsersToRoom(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	addingUserId := r.Header.Get("X-User-Id")
@@ -85,6 +96,8 @@ func (rh *RoomHandler) AddUsersToRoom(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+// PromoteUser promotes the specified user to admin in the room with the specified room ID.
+// If the requesting user is not an admin of the room, it returns a 403 Forbidden error.
 func (rh *RoomHandler) PromoteUser(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	promotingUserId := r.Header.Get("X-User-Id")
@@ -102,6 +115,8 @@ func (rh *RoomHandler) PromoteUser(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+// DemoteUser demotes the specified user from admin in the room with the specified room ID.
+// If the requesting user is not an admin of the room, it returns a 403 Forbidden error.
 func (rh *RoomHandler) DemoteUser(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	demotingUserId := r.Header.Get("X-User-Id")
@@ -119,6 +134,7 @@ func (rh *RoomHandler) DemoteUser(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+// LeaveRoom removes the requesting user from the room with the specified room ID.
 func (rh *RoomHandler) LeaveRoom(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	userId := r.Header.Get("X-User-Id")
@@ -131,6 +147,8 @@ func (rh *RoomHandler) LeaveRoom(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+// DeleteUserFromRoom removes the specified user from the room with the specified room ID.
+// If the requesting user is not an admin of the room, it returns a 403 Forbidden error.
 func (rh *RoomHandler) DeleteUserFromRoom(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	requestingUserId := r.Header.Get("X-User-Id")

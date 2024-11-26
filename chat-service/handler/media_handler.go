@@ -10,14 +10,20 @@ import (
 	"example.com/chat_app/chat_service/service"
 )
 
+// MediaHandler handles media upload and download requests.
 type MediaHandler struct {
 	mediaService *service.MediaService
 }
 
+// NewMediaHandler creates a new MediaHandler with the provided MediaService.
 func NewMediaHandler(ms *service.MediaService) *MediaHandler {
 	return &MediaHandler{mediaService: ms}
 }
 
+// UploadMedia handles media upload requests.
+// It reads the file from the multipart form data and uploads it to the specified room and media type.
+// It reads the binary file data from the "file" field in the form data.
+// It returns the metadata of the uploaded media.
 func (mh *MediaHandler) UploadMedia(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	roomId := r.PathValue("roomId")
@@ -54,6 +60,10 @@ func (mh *MediaHandler) UploadMedia(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
+// GetMedia handles media download requests.
+// It retrieves the media and metadata from the service and writes it to the response as a multipart form data.
+// The metadata is written as a form field named "metadata".
+// The file data is written as a form file named "file" with the blob ID as the file name.
 func (mh *MediaHandler) GetMedia(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	roomId := r.PathValue("roomId")

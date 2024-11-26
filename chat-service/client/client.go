@@ -10,11 +10,14 @@ import (
 	"os"
 )
 
+// MediaServiceClient is an http client wrapper for communication with media service.
 type MediaServiceClient struct {
 	BaseURL    string
 	HTTPClient *http.Client
 }
 
+// NewClient creates a new MediaServiceClient.
+// It reads the base URL for the media service from the MEDIA_SERVICE_URL environment variable.
 func NewClient() (*MediaServiceClient, error) {
 	baseURL := os.Getenv("MEDIA_SERVICE_URL")
 	if baseURL == "" {
@@ -27,6 +30,9 @@ func NewClient() (*MediaServiceClient, error) {
 	}, nil
 }
 
+// UploadMedia uploads media to the media service.
+// It sends a POST request to the media service with the media type and media bytes.
+// It returns the blob ID of the uploaded media.
 func (c *MediaServiceClient) UploadMedia(ctx context.Context, mediaType string, mediaBytes []byte) (string, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.getMediaURL(mediaType, ""), nil)
 	if err != nil {
@@ -63,6 +69,9 @@ func (c *MediaServiceClient) UploadMedia(ctx context.Context, mediaType string, 
 	return payload.BlobId, nil
 }
 
+// DownloadMedia downloads media from the media service.
+// It sends a GET request to the media service with the blob ID and media type.
+// It returns the media bytes.
 func (c *MediaServiceClient) DownloadMedia(ctx context.Context, blobId, mediaType string) ([]byte, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.getMediaURL(mediaType, blobId), nil)
 	if err != nil {
@@ -84,6 +93,7 @@ func (c *MediaServiceClient) DownloadMedia(ctx context.Context, blobId, mediaTyp
 	return io.ReadAll(resp.Body)
 }
 
+// getMediaURL returns the URL for the media service endpoint.
 func (c *MediaServiceClient) getMediaURL(mediaType, blobId string) string {
 	if blobId == "" {
 		return fmt.Sprintf("%s/%s", c.BaseURL, mediaType)

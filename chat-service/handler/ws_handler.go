@@ -8,18 +8,14 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-type ContextKey string
-
-const (
-	UserIdKey   ContextKey = "userId"
-	UsernameKey ContextKey = "username"
-)
-
+// WebsocketHandler handles WebSocket connections.
 type WebsocketHandler struct {
 	upgrader    websocket.Upgrader
 	chatService *service.ChatService
 }
 
+// NewWebsocketHandler creates a new WebsocketHandler with the provided ChatService.
+// It initializes the WebSocket upgrader with default values.
 func NewWebsocketHandler(rs *service.ChatService) *WebsocketHandler {
 	return &WebsocketHandler{
 		chatService: rs,
@@ -33,6 +29,10 @@ func NewWebsocketHandler(rs *service.ChatService) *WebsocketHandler {
 	}
 }
 
+// HandleWebSocketUpgradeRequest handles WebSocket upgrade requests.
+// It validates the connection and upgrades the HTTP connection to a WebSocket connection.
+// If the connection request points to a non-existent room, it returns a 404 Not Found error.
+// If the user is not a member of a room, it returns a 401 Unauthorized error.
 func (wsh *WebsocketHandler) HandleWebSocketUpgradeRequest(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	roomId := r.PathValue("roomId")
