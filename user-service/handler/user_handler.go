@@ -26,6 +26,8 @@ func NewUserHandler(s *service.UserService) *UserHandler {
 	}
 }
 
+// HandleMe returns the user information for the authenticated user. The user ID is read from the request headers
+// appended by the API Gateway from the JWT.
 func (h *UserHandler) HandleMe(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	userId := r.Header.Get("X-User-Id")
@@ -44,6 +46,7 @@ func (h *UserHandler) HandleMe(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+// HandleRegister registers a new user and returns the user DTO and JWT token.
 func (h *UserHandler) HandleRegister(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
@@ -77,6 +80,7 @@ func (h *UserHandler) HandleRegister(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// HandleLogin logs in a user and returns the user DTO and JWT token.
 func (h *UserHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	var logReq service.LoginRequest
@@ -112,6 +116,7 @@ func (h *UserHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// parseRequest reads the request body and unmarshals it into the given struct.
 func parseRequest(r *http.Request, reqStruct any) error {
 	bodyBytes, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -126,13 +131,14 @@ func parseRequest(r *http.Request, reqStruct any) error {
 	return nil
 }
 
+// writeJsonResponse writes the given struct as JSON to the response and sets the content type.
 func writeJsonResponse(w http.ResponseWriter, respStruct any) error {
 	w.Header().Set("Content-Type", "application/json")
-	tokenJson, err := json.Marshal(respStruct)
+	jsonBytes, err := json.Marshal(respStruct)
 	if err != nil {
 		return fmt.Errorf("failed marshaling response: %v", err)
 	}
-	_, err = w.Write(tokenJson)
+	_, err = w.Write(jsonBytes)
 	if err != nil {
 		return fmt.Errorf("failed writing to response: %v", err)
 	}
