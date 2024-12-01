@@ -22,7 +22,7 @@ type DeleteMessage struct {
 	SentBy    UserDetails `json:"sentBy"`
 }
 
-type WsIncomingMessage struct {
+type WsMessage struct {
 	Type MessageType     `json:"type"`
 	Data json.RawMessage `json:"data"`
 }

@@ -66,7 +66,7 @@ func (c *Connection) readPump() {
 		}
 		log.Printf("Read message from connection: %q, address: %p", string(messageBytes), c)
 
-		var incomingMessage structs.WsIncomingMessage
+		var incomingMessage structs.WsMessage
 		if err := c.unmarshalMessage(messageBytes, &incomingMessage); err != nil {
 			log.Printf("Error unmarshalling incoming message: %v", err)
 			break
@@ -121,7 +121,7 @@ func (c *Connection) writePump() {
 				log.Println("sendMessage channel closed")
 				return
 			}
-			if err := c.writeMessage(websocket.TextMessage, message); err != nil {
+			if err := c.writeMessage(structs.TypeTextMessage, message); err != nil {
 				log.Printf("Error writing message: %v to websocket connection: %s", err, c.ws.RemoteAddr().String())
 				return
 			}
@@ -131,7 +131,7 @@ func (c *Connection) writePump() {
 				log.Println("seenUpdate channel closed")
 				return
 			}
-			if err := c.writeMessage(websocket.TextMessage, seenMessage); err != nil {
+			if err := c.writeMessage(structs.TypeSeenMessage, seenMessage); err != nil {
 				log.Printf("Error writing seen message: %v to websocket connection: %s", err, c.ws.RemoteAddr().String())
 				return
 			}
@@ -141,7 +141,7 @@ func (c *Connection) writePump() {
 				log.Println("deleteMessage channel closed")
 				return
 			}
-			if err := c.writeMessage(websocket.TextMessage, deleteMessage); err != nil {
+			if err := c.writeMessage(structs.TypeDeleteMessage, deleteMessage); err != nil {
 				log.Printf("Error writing delete message: %v to websocket connection: %s", err, c.ws.RemoteAddr().String())
 				return
 			}
@@ -157,7 +157,7 @@ func (c *Connection) closeWebSocket(logMessage string) {
 }
 
 // unmarshalMessage unmarshals a byte slice into a given interface.
-func (c *Connection) unmarshalMessage(messageBytes []byte, v interface{}) error {
+func (c *Connection) unmarshalMessage(messageBytes []byte, v any) error {
 	err := json.Unmarshal(messageBytes, v)
 	if err != nil {
 		log.Printf("Error unmarshalling message: %v", err)
@@ -166,16 +166,24 @@ func (c *Connection) unmarshalMessage(messageBytes []byte, v interface{}) error 
 }
 
 // writeMessage marshals data and writes it to the WebSocket connection.
-func (c *Connection) writeMessage(messageType int, data interface{}) error {
-	messageBytes, err := json.Marshal(data)
+func (c *Connection) writeMessage(messageType structs.MessageType, data any) error {
+	contentBytes, err := json.Marshal(data)
 	if err != nil {
 		log.Printf("Error marshalling message: %v", err)
 		return err
 	}
-	if err := c.ws.WriteMessage(messageType, messageBytes); err != nil {
+	message := structs.WsMessage{
+		Type: messageType,
+		Data: contentBytes,
+	}
+	messageBytes, err := json.Marshal(message)
+	if err != nil {
+		return err
+	}
+	if err := c.ws.WriteMessage(websocket.TextMessage, messageBytes); err != nil {
 		log.Printf("Error writing message: %v", err)
 		return err
 	}
-	log.Printf("Wrote message to connection: %q, address: %p", string(messageBytes), c)
+	log.Printf("Wrote message to connection: %q, address: %p", string(contentBytes), c)
 	return nil
 }
