@@ -10,17 +10,19 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-
-
+// MongoChatRoomRepository provides methods to interact with the chat room collection in MongoDB.
 type MongoChatRoomRepository struct {
 	collection *mongo.Collection
 }
 
+// NewMongoChatRoomRepository creates a new instance of MongoChatRoomRepository.
+// It takes a MongoDB client, database name, and collection name as parameters.
 func NewMongoChatRoomRepository(client *mongo.Client, dbName, collectionName string) *MongoChatRoomRepository {
 	collection := client.Database(dbName).Collection(collectionName)
 	return &MongoChatRoomRepository{collection: collection}
 }
 
+// GetRoom retrieves a chat room from the MongoDB collection by its ID.
 func (repo *MongoChatRoomRepository) GetRoom(ctx context.Context, id string) (*structs.ChatRoomEntity, error) {
 	var room structs.ChatRoomEntity
 	filter := bson.M{"id": id}
@@ -31,8 +33,8 @@ func (repo *MongoChatRoomRepository) GetRoom(ctx context.Context, id string) (*s
 	return &room, nil
 }
 
+// CreateRoom creates a new chat room in the MongoDB collection.
 func (repo *MongoChatRoomRepository) CreateRoom(ctx context.Context) (*structs.ChatRoomEntity, error) {
-	// Create a new room if it does not exist
 	newRoom := &structs.ChatRoomEntity{
 		Id:       uuid.NewString(),
 		Messages: []structs.Message{},
@@ -46,12 +48,14 @@ func (repo *MongoChatRoomRepository) CreateRoom(ctx context.Context) (*structs.C
 	return newRoom, nil
 }
 
+// DeleteRoom removes a chat room from the MongoDB collection by its ID.
 func (repo *MongoChatRoomRepository) DeleteRoom(ctx context.Context, id string) error {
 	filter := bson.D{{Key: "id", Value: id}}
 	_, err := repo.collection.DeleteOne(ctx, filter)
 	return err
 }
 
+// AddMessageToRoom adds a message to a chat room in the MongoDB collection.
 func (repo *MongoChatRoomRepository) AddMessageToRoom(ctx context.Context, roomId string, message *structs.Message) error {
 	filter := bson.M{"id": roomId}
 	update := bson.M{
@@ -63,6 +67,7 @@ func (repo *MongoChatRoomRepository) AddMessageToRoom(ctx context.Context, roomI
 	return err
 }
 
+// InsertUserIntoRoom adds a user to a chat room in the MongoDB collection.
 func (repo *MongoChatRoomRepository) InsertUserIntoRoom(ctx context.Context, roomId string, user structs.UserPermissions) error {
 	filter := bson.M{"id": roomId}
 	update := bson.M{
@@ -74,6 +79,7 @@ func (repo *MongoChatRoomRepository) InsertUserIntoRoom(ctx context.Context, roo
 	return err
 }
 
+// ChangeUserRole changes the role of a user in a chat room in the MongoDB collection.
 func (repo *MongoChatRoomRepository) ChangeUserRole(ctx context.Context, roomId string, userId string, role structs.Role) error {
 	filter := bson.M{"id": roomId, "users.userId": userId}
 	update := bson.M{
@@ -85,6 +91,7 @@ func (repo *MongoChatRoomRepository) ChangeUserRole(ctx context.Context, roomId 
 	return err
 }
 
+// DeleteUserFromRoom removes a user from a chat room in the MongoDB collection.
 func (repo *MongoChatRoomRepository) DeleteUserFromRoom(ctx context.Context, roomId string, userId string) error {
 	filter := bson.M{"id": roomId}
 	update := bson.M{
@@ -96,20 +103,15 @@ func (repo *MongoChatRoomRepository) DeleteUserFromRoom(ctx context.Context, roo
 	return err
 }
 
+// GetUsersPermissions retrieves the permissions of a user in a chat room from the MongoDB collection.
 func (repo *MongoChatRoomRepository) GetUsersPermissions(ctx context.Context, roomId string, userId string) (*structs.UserPermissions, error) {
-	// Define the aggregation pipeline
 	pipeline := mongo.Pipeline{
-		// Match the room with the specified ID
 		bson.D{{Key: "$match", Value: bson.D{{Key: "id", Value: roomId}}}},
-		// Unwind the users array
 		bson.D{{Key: "$unwind", Value: "$users"}},
-		// Match the specific user
 		bson.D{{Key: "$match", Value: bson.D{{Key: "users.userId", Value: userId}}}},
-		// Project the user permissions
 		bson.D{{Key: "$project", Value: bson.D{{Key: "userPermissions", Value: "$users"}}}},
 	}
 
-	// Execute the aggregation pipeline
 	cursor, err := repo.collection.Aggregate(ctx, pipeline)
 	if err != nil {
 		return nil, err
@@ -130,6 +132,7 @@ func (repo *MongoChatRoomRepository) GetUsersPermissions(ctx context.Context, ro
 	return &result.UserPermissions, nil
 }
 
+// InsertSeenBy adds a user to the seenBy list of a message in a chat room in the MongoDB collection.
 func (repo *MongoChatRoomRepository) InsertSeenBy(ctx context.Context, roomId string, messageId string, userId string) error {
 	filter := bson.M{"id": roomId, "messages.id": messageId}
 	update := bson.M{
@@ -141,6 +144,7 @@ func (repo *MongoChatRoomRepository) InsertSeenBy(ctx context.Context, roomId st
 	return err
 }
 
+// DeleteMessage removes a message from a chat room in the MongoDB collection.
 func (repo *MongoChatRoomRepository) DeleteMessage(ctx context.Context, roomId string, messageId string) error {
 	filter := bson.M{"id": roomId, "messages.id": messageId}
 	update := bson.M{
