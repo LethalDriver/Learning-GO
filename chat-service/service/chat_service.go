@@ -79,6 +79,6 @@ func (s *ChatService) processAndSaveMessage(ctx context.Context, roomId string, 
 	message.Id = uuid.New().String()
 	message.SentAt = time.Now()
 	message.ChatRoomId = roomId
-	message.SeenBy = []structs.UserDetails{message.SentBy}
+	message.SeenBy = []string{message.SentBy}
 	return *message, s.roomRepo.AddMessageToRoom(ctx, roomId, message)
 }

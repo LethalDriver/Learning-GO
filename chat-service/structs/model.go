@@ -38,9 +38,9 @@ type Message struct {
 	Content       string         `bson:"content" json:"content"`
 	EmbeddedMedia *EmbeddedMedia `bson:"embeddedMedia" json:"embeddedMedia"`
 	ChatRoomId    string         `bson:"chatRoomId" json:"chatRoomId"`
-	SentBy        UserDetails    `bson:"sentBy" json:"sentBy"`
+	SentBy        string         `bson:"sentBy" json:"sentBy"`
 	SentAt        time.Time      `bson:"sentAt" json:"sentAt"`
-	SeenBy        []UserDetails  `bson:"seenBy" json:"seenBy"`
+	SeenBy        []string       `bson:"seenBy" json:"seenBy"`
 }
 
 type EmbeddedMedia struct {

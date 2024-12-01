@@ -79,7 +79,7 @@ func (c *Connection) readPump() {
 				log.Printf("Error unmarshalling message data: %v", err)
 				break
 			}
-			msg.SentBy = c.user
+			msg.SentBy = c.user.Id
 			c.room.Text <- msg
 			log.Printf("Received structs.Message: %+v", msg)
 
