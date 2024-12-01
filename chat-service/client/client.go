@@ -1,6 +1,7 @@
 package client
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -34,7 +35,7 @@ func NewClient() (*MediaServiceClient, error) {
 // It sends a POST request to the media service with the media type and media bytes.
 // It returns the blob ID of the uploaded media.
 func (c *MediaServiceClient) UploadMedia(ctx context.Context, mediaType string, mediaBytes []byte) (string, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.getMediaURL(mediaType, ""), nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.getMediaURL(mediaType, ""), bytes.NewReader(mediaBytes))
 	if err != nil {
 		return "", fmt.Errorf("failed to create upload image request: %v", err)
 	}
