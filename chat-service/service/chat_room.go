@@ -8,6 +8,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+// ChatRoom represents a chat room with its members and channels for various operations.
+// It is a struct represetning a chat room instance in memory, different from the ChatRoomEntity in the repository package.
 type ChatRoom struct {
 	Id         string
 	Members    map[*Connection]bool
@@ -18,6 +20,8 @@ type ChatRoom struct {
 	Unregister chan *Connection
 }
 
+// NewChatRoom creates a new instance of ChatRoom.
+// It takes a room ID as a parameter and initializes the channels and members map.
 func NewChatRoom(roomId string) *ChatRoom {
 	return &ChatRoom{
 		Id:         roomId,
@@ -30,6 +34,7 @@ func NewChatRoom(roomId string) *ChatRoom {
 	}
 }
 
+// Run starts the chat room's main loop, handling registration, unregistration, and message broadcasting.
 func (r *ChatRoom) Run(service *ChatService) {
 	ctx := context.Background()
 	for {
@@ -40,7 +45,6 @@ func (r *ChatRoom) Run(service *ChatService) {
 			if err != nil {
 				if err == mongo.ErrNoDocuments {
 					log.Printf("No messages found for room %s", r.Id)
-
 				} else {
 					log.Printf("Error getting messages for room %s: %v", r.Id, err)
 				}
@@ -48,12 +52,14 @@ func (r *ChatRoom) Run(service *ChatService) {
 			}
 			service.pumpExistingMessages(conn, room.Messages)
 			r.Members[conn] = true
+
 		case conn := <-r.Unregister:
 			log.Printf("Unregistering connection from room %s", r.Id)
 			if _, ok := r.Members[conn]; ok {
 				delete(r.Members, conn)
 				close(conn.sendMessage)
 			}
+
 		case message := <-r.Text:
 			log.Printf("Broadcasting message to room %s: %s", r.Id, string(message.Content))
 			message, err := service.processAndSaveMessage(ctx, r.Id, &message)
@@ -69,15 +75,14 @@ func (r *ChatRoom) Run(service *ChatService) {
 					delete(r.Members, conn)
 				}
 			}
+
 		case seenMessage := <-r.Seen:
 			log.Printf("Broadcasting seen update to room %s: %s", r.Id, seenMessage.MessageId)
-
 			err := service.roomRepo.InsertSeenBy(ctx, r.Id, seenMessage.MessageId, seenMessage.SeenBy.Id)
 			if err != nil {
 				log.Printf("Error saving seen update for message %s in room %s", seenMessage.MessageId, r.Id)
 				break
 			}
-
 			for conn := range r.Members {
 				select {
 				case conn.sendSeen <- seenMessage:
@@ -89,13 +94,11 @@ func (r *ChatRoom) Run(service *ChatService) {
 
 		case deleteMessage := <-r.Delete:
 			log.Printf("Broadcasting delete message to room %s: %s", r.Id, deleteMessage.MessageId)
-
 			err := service.roomRepo.DeleteMessage(ctx, r.Id, deleteMessage.MessageId)
 			if err != nil {
 				log.Printf("Error deleting message %s in room %s", deleteMessage.MessageId, r.Id)
 				break
 			}
-
 			for conn := range r.Members {
 				select {
 				case conn.sendDelete <- deleteMessage:

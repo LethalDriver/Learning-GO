@@ -6,6 +6,7 @@ import (
 	"example.com/chat_app/chat_service/structs"
 )
 
+// ChatRoomRepository provides methods to interact with chat rooms.
 type ChatRoomRepository interface {
 	CreateRoom(ctx context.Context) (*structs.ChatRoomEntity, error)
 	GetRoom(ctx context.Context, id string) (*structs.ChatRoomEntity, error)

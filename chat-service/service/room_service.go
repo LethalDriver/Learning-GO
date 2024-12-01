@@ -8,16 +8,20 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+// ErrInsufficientPermissions is an error indicating that the user does not have sufficient permissions.
 var ErrInsufficientPermissions = errors.New("insufficient permissions")
 
+// RoomService provides methods to manage chat rooms and handle user permissions.
 type RoomService struct {
 	repo ChatRoomRepository
 }
 
+// NewRoomService creates a new instance of RoomService.
 func NewRoomService(repo ChatRoomRepository) *RoomService {
 	return &RoomService{repo: repo}
 }
 
+// GetRoomDto retrieves a chat room DTO if the user belongs to the room.
 func (s *RoomService) GetRoomDto(ctx context.Context, roomId string, userId string) (*structs.RoomDto, error) {
 	room, err := s.repo.GetRoom(ctx, roomId)
 	if err != nil {
@@ -30,6 +34,7 @@ func (s *RoomService) GetRoomDto(ctx context.Context, roomId string, userId stri
 	return roomDto, nil
 }
 
+// DeleteRoom deletes a chat room if the user has admin privileges.
 func (s *RoomService) DeleteRoom(ctx context.Context, roomId string, userId string) error {
 	if err := s.validateAdminPrivileges(ctx, roomId, userId); err != nil {
 		return err
@@ -37,6 +42,7 @@ func (s *RoomService) DeleteRoom(ctx context.Context, roomId string, userId stri
 	return s.repo.DeleteRoom(ctx, roomId)
 }
 
+// AddUserToRoom adds a user to a chat room if the requesting user has admin privileges.
 func (s *RoomService) AddUserToRoom(ctx context.Context, roomId string, newUserId string, addingUserId string) error {
 	if err := s.validateAdminPrivileges(ctx, roomId, addingUserId); err != nil {
 		return err
@@ -48,6 +54,7 @@ func (s *RoomService) AddUserToRoom(ctx context.Context, roomId string, newUserI
 	return s.repo.InsertUserIntoRoom(ctx, roomId, userPermissions)
 }
 
+// AddUsersToRoom adds multiple users to a chat room if the requesting user has admin privileges.
 func (s *RoomService) AddUsersToRoom(ctx context.Context, roomId string, newUsers []string, addingUserId string) ([]error, error) {
 	var dbInsertErrors []error
 	if err := s.validateAdminPrivileges(ctx, roomId, addingUserId); err != nil {
@@ -66,6 +73,7 @@ func (s *RoomService) AddUsersToRoom(ctx context.Context, roomId string, newUser
 	return dbInsertErrors, nil
 }
 
+// RemoveUserFromRoom removes a user from a chat room if the requesting user has admin privileges.
 func (s *RoomService) RemoveUserFromRoom(ctx context.Context, roomId, requestingUserId, removedUserId string) error {
 	if err := s.validateAdminPrivileges(ctx, roomId, requestingUserId); err != nil {
 		return err
@@ -73,10 +81,12 @@ func (s *RoomService) RemoveUserFromRoom(ctx context.Context, roomId, requesting
 	return s.repo.DeleteUserFromRoom(ctx, roomId, removedUserId)
 }
 
+// LeaveRoom allows a user to leave a chat room.
 func (s *RoomService) LeaveRoom(ctx context.Context, roomId, userId string) error {
 	return s.repo.DeleteUserFromRoom(ctx, roomId, userId)
 }
 
+// PromoteUser promotes a user to admin in a chat room if the requesting user has admin privileges.
 func (s *RoomService) PromoteUser(ctx context.Context, roomId string, promotingUserId, promotedUserId string) error {
 	if err := s.validateAdminPrivileges(ctx, roomId, promotingUserId); err != nil {
 		return err
@@ -84,6 +94,7 @@ func (s *RoomService) PromoteUser(ctx context.Context, roomId string, promotingU
 	return s.repo.ChangeUserRole(ctx, roomId, promotedUserId, structs.Admin)
 }
 
+// DemoteUser demotes a user to member in a chat room if the requesting user has admin privileges.
 func (s *RoomService) DemoteUser(ctx context.Context, roomId, demotingUserId, demotedUserId string) error {
 	if err := s.validateAdminPrivileges(ctx, roomId, demotingUserId); err != nil {
 		return err
@@ -91,6 +102,7 @@ func (s *RoomService) DemoteUser(ctx context.Context, roomId, demotingUserId, de
 	return s.repo.ChangeUserRole(ctx, roomId, demotedUserId, structs.Member)
 }
 
+// CreateRoom creates a new chat room and adds the creating user as an admin.
 func (s *RoomService) CreateRoom(ctx context.Context, userId string) (*structs.ChatRoomEntity, error) {
 	room, err := s.repo.CreateRoom(ctx)
 	if err != nil {
@@ -103,6 +115,7 @@ func (s *RoomService) CreateRoom(ctx context.Context, userId string) (*structs.C
 	return room, nil
 }
 
+// AddAdminToRoom adds an admin to a chat room.
 func (s *RoomService) AddAdminToRoom(ctx context.Context, roomId string, userId string) error {
 	userPermission := structs.UserPermissions{
 		UserId: userId,
@@ -111,6 +124,7 @@ func (s *RoomService) AddAdminToRoom(ctx context.Context, roomId string, userId 
 	return s.repo.InsertUserIntoRoom(ctx, roomId, userPermission)
 }
 
+// validateAdminPrivileges checks if a user has admin privileges in a chat room.
 func (s *RoomService) validateAdminPrivileges(ctx context.Context, roomId, userId string) error {
 	userPermissions, err := s.repo.GetUsersPermissions(ctx, roomId, userId)
 	if err != nil {

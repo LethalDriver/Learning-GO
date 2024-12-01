@@ -4,6 +4,7 @@ import (
 	"example.com/chat_app/chat_service/structs"
 )
 
+// MapRoomEntityToDto maps a ChatRoomEntity to a RoomDto.
 func MapRoomEntityToDto(room *structs.ChatRoomEntity) *structs.RoomDto {
 	members := make([]structs.UserDto, 0)
 	for _, member := range room.Users {
@@ -15,6 +16,7 @@ func MapRoomEntityToDto(room *structs.ChatRoomEntity) *structs.RoomDto {
 	}
 }
 
+// MapUserPermissionsToDto maps a UserPermissions to a UserDto.
 func MapUserPermissionsToDto(user *structs.UserPermissions) *structs.UserDto {
 	return &structs.UserDto{
 		Id:   user.UserId,

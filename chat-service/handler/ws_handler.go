@@ -41,7 +41,7 @@ func (wsh *WebsocketHandler) HandleWebSocketUpgradeRequest(w http.ResponseWriter
 	if err := wsh.chatService.ValidateConnection(ctx, roomId, userId); err != nil {
 		log.Println("Failed to validate connection:", err)
 		switch err {
-		case service.RoomNotFound:
+		case service.ErrRoomNotFound:
 			http.Error(w, "Room not found", http.StatusNotFound)
 		case service.ErrInsufficientPermissions:
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)

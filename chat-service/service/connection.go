@@ -9,6 +9,7 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+// Connection represents a WebSocket connection to a chat room.
 type Connection struct {
 	ws          *websocket.Conn
 	user        structs.UserDetails
@@ -18,6 +19,7 @@ type Connection struct {
 	room        *ChatRoom
 }
 
+// handleConnection handles a new WebSocket connection to a chat room.
 func handleConnection(ws *websocket.Conn, room *ChatRoom, user structs.UserDetails) error {
 	clientIP := ws.RemoteAddr().String()
 	log.Printf("Handling connection from %s", clientIP)
@@ -52,6 +54,7 @@ func handleConnection(ws *websocket.Conn, room *ChatRoom, user structs.UserDetai
 	return nil
 }
 
+// readPump reads messages from the WebSocket connection.
 func (c *Connection) readPump() {
 	defer c.closeWebSocket("Closing WebSocket connection in readPump")
 
@@ -107,6 +110,7 @@ func (c *Connection) readPump() {
 	log.Println("Exiting readPump")
 }
 
+// writePump writes messages to the WebSocket connection.
 func (c *Connection) writePump() {
 	defer c.closeWebSocket("Sending close message and closing WebSocket connection in writePump")
 
@@ -145,12 +149,14 @@ func (c *Connection) writePump() {
 	}
 }
 
+// closeWebSocket closes the WebSocket connection with a log message.
 func (c *Connection) closeWebSocket(logMessage string) {
 	log.Println(logMessage)
 	c.ws.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
 	c.ws.Close()
 }
 
+// unmarshalMessage unmarshals a byte slice into a given interface.
 func (c *Connection) unmarshalMessage(messageBytes []byte, v interface{}) error {
 	err := json.Unmarshal(messageBytes, v)
 	if err != nil {
@@ -159,6 +165,7 @@ func (c *Connection) unmarshalMessage(messageBytes []byte, v interface{}) error 
 	return err
 }
 
+// writeMessage marshals data and writes it to the WebSocket connection.
 func (c *Connection) writeMessage(messageType int, data interface{}) error {
 	messageBytes, err := json.Marshal(data)
 	if err != nil {
