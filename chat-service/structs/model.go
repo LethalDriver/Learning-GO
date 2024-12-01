@@ -22,11 +22,6 @@ const (
 	Admin
 )
 
-type WsIncomingMessage struct {
-	Type MessageType     `json:"type"`
-	Data json.RawMessage `json:"data"`
-}
-
 type UserPermissions struct {
 	UserId string `bson:"userId" json:"userId"`
 	Role   Role   `bson:"role" json:"permission"`
@@ -55,16 +50,6 @@ type EmbeddedMedia struct {
 
 type UserDetails struct {
 	Id string `bson:"id" json:"id"`
-}
-
-type SeenMessage struct {
-	MessageId string      `json:"messageId"`
-	SeenBy    UserDetails `json:"seenBy"`
-}
-
-type DeleteMessage struct {
-	MessageId string      `json:"messageId"`
-	SentBy    UserDetails `json:"sentBy"`
 }
 
 func (mt MessageType) String() string {
