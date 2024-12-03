@@ -1,10 +1,8 @@
 package handler
 
 import (
-	"bytes"
 	"encoding/json"
 	"io"
-	"mime/multipart"
 	"net/http"
 
 	"example.com/chat_app/chat_service/service"
@@ -25,10 +23,13 @@ func NewMediaHandler(ms *service.MediaService) *MediaHandler {
 // It reads the binary file data from the "file" field in the form data.
 // It returns the metadata of the uploaded media.
 func (mh *MediaHandler) UploadMedia(w http.ResponseWriter, r *http.Request) {
+	roomId := r.URL.Query().Get("roomId")
+	if roomId == "" {
+		http.Error(w, "Missing roomId query parameter", http.StatusBadRequest)
+		return
+	}
 	ctx := r.Context()
-	roomId := r.PathValue("roomId")
 	userId := r.Header.Get("X-User-Id")
-	mediaType := r.PathValue("mediaType")
 
 	// Parse the multipart form data
 	err := r.ParseMultipartForm(10 << 20) // Limit of 10 MB
@@ -50,6 +51,8 @@ func (mh *MediaHandler) UploadMedia(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Unable to read image file", http.StatusInternalServerError)
 	}
 
+	mediaType := r.FormValue("mediaType")
+
 	// Pass the file to the service
 	fileDocument, err := mh.mediaService.CreateMediaResource(ctx, roomId, mediaType, userId, fileBytes)
 	if err != nil {
@@ -60,57 +63,44 @@ func (mh *MediaHandler) UploadMedia(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
-// GetMedia handles media download requests.
-// It retrieves the media and metadata from the service and writes it to the response as a multipart form data.
-// The metadata is written as a form field named "metadata".
-// The file data is written as a form file named "file" with the blob ID as the file name.
-func (mh *MediaHandler) GetMedia(w http.ResponseWriter, r *http.Request) {
+// GetMediaMetadata returns the metadata of the specified media as a JSON response.
+func (mh *MediaHandler) GetMediaMetadata(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	roomId := r.PathValue("roomId")
 	mediaId := r.PathValue("mediaId")
-	mediaTypeStr := r.PathValue("mediaType")
 
-	// Retrieve the media and metadata from the service
-	fileMetadata, fileBytes, err := mh.mediaService.GetMedia(ctx, mediaId, mediaTypeStr, roomId)
+	fileMetadata, err := mh.mediaService.GetMediaMetadata(ctx, mediaId)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	mw := multipart.NewWriter(w)
-	w.Header().Set("Content-Type", mw.FormDataContentType())
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(fileMetadata); err != nil {
+		http.Error(w, "Failed to encode metadata", http.StatusInternalServerError)
+		return
+	}
+}
 
-	metadataPart, err := mw.CreateFormField("metadata")
-	if err != nil {
-		http.Error(w, "Unable to create metadata part", http.StatusInternalServerError)
-		return
-	}
-	metadataBytes, err := json.Marshal(fileMetadata)
-	if err != nil {
-		http.Error(w, "Unable to marshal metadata", http.StatusInternalServerError)
-		return
-	}
-	_, err = metadataPart.Write(metadataBytes)
-	if err != nil {
-		http.Error(w, "Unable to write metadata part", http.StatusInternalServerError)
-		return
-	}
+// GetMediaFile retrieves the binary image data from the media service and returns it with the appropriate content type.
+func (mh *MediaHandler) GetMediaFile(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	mediaId := r.PathValue("mediaId")
 
-	filePart, err := mw.CreateFormFile("file", fileMetadata.BlobId)
+	fileBytes, err := mh.mediaService.GetMediaBinary(ctx, mediaId)
 	if err != nil {
-		http.Error(w, "Unable to create file part", http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	_, err = io.Copy(filePart, bytes.NewReader(fileBytes))
-	if err != nil {
-		http.Error(w, "Unable to write file part", http.StatusInternalServerError)
-		return
+	if len(fileBytes) < 512 {
+		fileBytes = append(fileBytes, make([]byte, 512-len(fileBytes))...)
 	}
+	contentType := http.DetectContentType(fileBytes[:512])
 
-	err = mw.Close()
-	if err != nil {
-		http.Error(w, "Unable to close multipart writer", http.StatusInternalServerError)
+	w.Header().Set("Content-Type", contentType)
+	w.WriteHeader(http.StatusOK)
+	if _, err := w.Write(fileBytes); err != nil {
+		http.Error(w, "Failed to write file", http.StatusInternalServerError)
 		return
 	}
 }

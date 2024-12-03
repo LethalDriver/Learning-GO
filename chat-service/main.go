@@ -76,7 +76,8 @@ func initializeRoutes(ws *handler.WebsocketHandler, rh *handler.RoomHandler, mh 
 	mux.Handle("PATCH /room/{roomId}/users/{userId}/demote", http.HandlerFunc(rh.DemoteUser))
 	mux.Handle("DELETE /room/{roomId}/users/{userId}", http.HandlerFunc(rh.DeleteUserFromRoom))
 	mux.Handle("DELETE /room/{roomId}/users/me", http.HandlerFunc(rh.LeaveRoom))
-	mux.Handle("POST /room/{roomId}/{mediaType}", http.HandlerFunc(mh.UploadMedia))
-	mux.Handle("GET /room/{roomId}/{mediaType}/{mediaId}", http.HandlerFunc(mh.GetMedia))
+	mux.Handle("POST /media/upload", http.HandlerFunc(mh.UploadMedia))
+	mux.Handle("GET /media/{mediaId}/download", http.HandlerFunc(mh.GetMediaFile))
+	mux.Handle("GET /media/{mediaId}", http.HandlerFunc(mh.GetMediaMetadata))
 	return mux
 }

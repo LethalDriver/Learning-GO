@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"log"
 	"time"
 
 	"example.com/chat_app/chat_service/structs"
@@ -39,6 +40,7 @@ func NewMediaService(repo MediaRepository, client Client) *MediaService {
 // CreateMediaResource creates a new media resource.
 // It uploads the media to the media service and saves the metadata in the repository.
 func (s *MediaService) CreateMediaResource(ctx context.Context, roomId, mediaTypeStr, userId string, mediaBytes []byte) (*structs.MediaFile, error) {
+	log.Printf("Uploading media of type %s\n to room %s", mediaTypeStr, roomId)
 	blobId, err := s.client.UploadMedia(ctx, mediaTypeStr, mediaBytes)
 	if err != nil {
 		return nil, err
@@ -62,17 +64,27 @@ func (s *MediaService) CreateMediaResource(ctx context.Context, roomId, mediaTyp
 	return file, nil
 }
 
-// GetMedia retrieves a media file by its ID.
+// GetMediaMetadata retrieves a media file by its ID.
 // It downloads the media from the media service and returns the metadata and binary data.
-func (s *MediaService) GetMedia(ctx context.Context, id, mediaTypeStr, roomId string) (*structs.MediaFile, []byte, error) {
+func (s *MediaService) GetMediaMetadata(ctx context.Context, id string) (*structs.MediaFile, error) {
 	fileMetadata, err := s.repo.GetFile(ctx, id)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-	imageBytes, err := s.client.DownloadMedia(ctx, fileMetadata.BlobId, mediaTypeStr)
+	return fileMetadata, nil
+}
+
+// GetMediaBinary retrieves the binary data of a media file by its ID.
+// It downloads the media from the media service and returns the binary data.
+func (s *MediaService) GetMediaBinary(ctx context.Context, id string) ([]byte, error) {
+	fileMetadata, err := s.repo.GetFile(ctx, id)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
+	}
+	imageBytes, err := s.client.DownloadMedia(ctx, fileMetadata.BlobId, fileMetadata.Type.String())
+	if err != nil {
+		return nil, err
 	}
 
-	return fileMetadata, imageBytes, nil
+	return imageBytes, nil
 }
