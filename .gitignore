@@ -1,2 +1,4 @@
 .env
 *.pem
+.venv
+multishot_examples.py
