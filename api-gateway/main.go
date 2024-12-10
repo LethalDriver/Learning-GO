@@ -27,9 +27,11 @@ func main() {
 	mux.Handle("/chats/", JWTMiddleware(authService, http.StripPrefix("/chats", proxyHandler("http://chat-service:8082"))))
 	mux.Handle("/media/", JWTMiddleware(authService, http.StripPrefix("/media", proxyHandler("http://media-service:8083"))))
 
+	handler := CORSMiddleware(mux)
+
 	server := &http.Server{
 		Addr:         fmt.Sprintf(":%s", port),
-		Handler:      mux,
+		Handler:      handler,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  30 * time.Second,
