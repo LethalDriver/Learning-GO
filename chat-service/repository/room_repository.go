@@ -155,3 +155,30 @@ func (repo *MongoChatRoomRepository) DeleteMessage(ctx context.Context, roomId s
 	_, err := repo.collection.UpdateOne(ctx, filter, update)
 	return err
 }
+
+func (repo *MongoChatRoomRepository) GetUnseenMessages(ctx context.Context, roomId, userId string) ([]structs.Message, error) {
+	pipeline := mongo.Pipeline{
+		bson.D{{Key: "$match", Value: bson.D{{Key: "id", Value: roomId}}}},
+		bson.D{{Key: "$unwind", Value: "$messages"}},
+		bson.D{{Key: "$match", Value: bson.D{{Key: "messages.seenBy", Value: bson.D{{Key: "$ne", Value: userId}}}}}},
+		bson.D{{Key: "$sort", Value: bson.D{{Key: "messages.SentAt", Value: 1}}}}, // Sort messages by SentAt in ascending order
+		bson.D{{Key: "$project", Value: bson.D{{Key: "message", Value: "$messages"}}}},
+	}
+
+	cursor, err := repo.collection.Aggregate(ctx, pipeline)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	var messages []structs.Message
+	for cursor.Next(ctx) {
+		var message structs.Message
+		if err := cursor.Decode(&message); err != nil {
+			return nil, err
+		}
+		messages = append(messages, message)
+	}
+
+	return messages, nil 
+}

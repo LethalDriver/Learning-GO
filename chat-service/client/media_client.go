@@ -17,9 +17,9 @@ type MediaServiceClient struct {
 	HTTPClient *http.Client
 }
 
-// NewClient creates a new MediaServiceClient.
+// NewMediaClient creates a new MediaServiceClient.
 // It reads the base URL for the media service from the MEDIA_SERVICE_URL environment variable.
-func NewClient() (*MediaServiceClient, error) {
+func NewMediaClient() (*MediaServiceClient, error) {
 	baseURL := os.Getenv("MEDIA_SERVICE_URL")
 	if baseURL == "" {
 		return nil, fmt.Errorf("MEDIA_SERVICE_URL environment variable not set")

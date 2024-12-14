@@ -6,6 +6,7 @@ import (
 	"log"
 	"time"
 
+	"example.com/chat_app/chat_service/client"
 	"example.com/chat_app/chat_service/structs"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
@@ -19,13 +20,15 @@ var ErrRoomNotFound = errors.New("room not found")
 type ChatService struct {
 	roomRepo    ChatRoomRepository
 	roomManager RoomManager
+	ai          *client.AiAssistantClient
 }
 
 // NewChatService creates a new instance of ChatService.
-func NewChatService(roomRepo ChatRoomRepository, roomManager RoomManager) *ChatService {
+func NewChatService(roomRepo ChatRoomRepository, roomManager RoomManager, ai *client.AiAssistantClient) *ChatService {
 	return &ChatService{
 		roomRepo:    roomRepo,
 		roomManager: roomManager,
+		ai:          ai,
 	}
 }
 
@@ -55,6 +58,23 @@ func (s *ChatService) ValidateConnection(ctx context.Context, roomId, userId str
 		return ErrInsufficientPermissions
 	}
 	return nil
+}
+
+func (s *ChatService) GetMessagesSummary(ctx context.Context, roomId, userId string) (*structs.MessagesSummary, error) {
+	room, err := s.roomRepo.GetRoom(ctx, roomId)
+	if err != nil {
+		return nil, err
+	}
+	if !checkIfUserBelongsToRoom(room, userId) {
+		return nil, ErrInsufficientPermissions
+	}
+
+	summary, err := s.ai.GetMessagesSummary(ctx, room.Messages)
+	if err != nil {
+		return nil, err
+	}
+
+	return summary, nil
 }
 
 // checkIfUserBelongsToRoom checks if a user belongs to a chat room.

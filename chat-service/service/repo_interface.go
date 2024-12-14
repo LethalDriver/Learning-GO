@@ -18,4 +18,5 @@ type ChatRoomRepository interface {
 	DeleteUserFromRoom(ctx context.Context, roomId string, userId string) error
 	GetUsersPermissions(ctx context.Context, roomId string, userId string) (*structs.UserPermissions, error)
 	ChangeUserRole(ctx context.Context, roomId string, userId string, role structs.Role) error
+	GetUnseenMessages(ctx context.Context, roomId, userId string) ([]structs.Message, error)
 }

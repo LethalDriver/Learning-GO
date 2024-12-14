@@ -40,21 +40,27 @@ func main() {
 	chatRoomRepo := repository.NewMongoChatRoomRepository(mongoClient, "chatdb", "chatrooms")
 	mediaRepo := repository.NewMongoFileRepository(mongoClient, "chatdb", "mediafiles")
 
-	mediaServiceClient, err := client.NewClient()
+	mediaServiceClient, err := client.NewMediaClient()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	aiClient, err := client.NewAiClient()
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	roomManager := service.NewRoomManager()
-	chatService := service.NewChatService(chatRoomRepo, roomManager)
+	chatService := service.NewChatService(chatRoomRepo, roomManager, aiClient)
 	roomService := service.NewRoomService(chatRoomRepo)
 	mediaService := service.NewMediaService(mediaRepo, mediaServiceClient)
 
 	wsHandler := handler.NewWebsocketHandler(chatService)
 	roomHandler := handler.NewRoomHandler(roomService)
 	mediaHandler := handler.NewMediaHandler(mediaService)
+	chatHandler := handler.NewChatHandler(chatService)
 
-	router := initializeRoutes(wsHandler, roomHandler, mediaHandler) // configure routes
+	router := initializeRoutes(wsHandler, roomHandler, mediaHandler, chatHandler) // configure routes
 
 	server := &http.Server{
 		Addr:    fmt.Sprintf(":%s", port),
@@ -65,8 +71,9 @@ func main() {
 	log.Fatal(server.ListenAndServe())
 }
 
-func initializeRoutes(ws *handler.WebsocketHandler, rh *handler.RoomHandler, mh *handler.MediaHandler) *http.ServeMux {
+func initializeRoutes(ws *handler.WebsocketHandler, rh *handler.RoomHandler, mh *handler.MediaHandler, ch *handler.ChatHandler) *http.ServeMux {
 	mux := http.NewServeMux()
+	mux.Handle("POST /chat/{roomId}/summary", http.HandlerFunc(ch.GetMessagesSummary))
 	mux.Handle("GET /room/{roomId}/connect", http.HandlerFunc(ws.HandleWebSocketUpgradeRequest))
 	mux.Handle("GET /room/{roomId}", http.HandlerFunc(rh.GetRoom))
 	mux.Handle("POST /room", http.HandlerFunc(rh.CreateRoom))

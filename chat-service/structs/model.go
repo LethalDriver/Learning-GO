@@ -52,6 +52,10 @@ type UserDetails struct {
 	Id string `bson:"id" json:"id"`
 }
 
+type MessagesSummary struct {
+	Summary string `json:"summary"`
+}
+
 func (mt MessageType) String() string {
 	switch mt {
 	case TypeTextMessage:

@@ -170,3 +170,4 @@ func (rh *RoomHandler) DeleteUserFromRoom(w http.ResponseWriter, r *http.Request
 	writeJsonResponse(w, response)
 	w.WriteHeader(http.StatusOK)
 }
+
