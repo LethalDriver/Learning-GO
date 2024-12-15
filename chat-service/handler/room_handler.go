@@ -66,6 +66,19 @@ func (rh *RoomHandler) GetRoom(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+// ListRoomsForUser returns a list of rooms that the user is a member of.
+func (rh *RoomHandler) ListRoomsForUser(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	userId := r.Header.Get("X-User-Id")
+	rooms, err := rh.roomService.ListRoomsForUser(ctx, userId)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	writeJsonResponse(w, rooms)
+	w.WriteHeader(http.StatusOK)
+}
+
 // DeleteRoom deletes the room with the specified room ID.
 // If requesting user is not its admin it returns a 403 Forbidden error.
 func (rh *RoomHandler) DeleteRoom(w http.ResponseWriter, r *http.Request) {

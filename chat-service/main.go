@@ -73,9 +73,10 @@ func main() {
 
 func initializeRoutes(ws *handler.WebsocketHandler, rh *handler.RoomHandler, mh *handler.MediaHandler, ch *handler.ChatHandler) *http.ServeMux {
 	mux := http.NewServeMux()
-	mux.Handle("POST /chat/{roomId}/summary", http.HandlerFunc(ch.GetMessagesSummary))
+	mux.Handle("POST /room/{roomId}/messages/summary", http.HandlerFunc(ch.GetMessagesSummary))
 	mux.Handle("GET /room/{roomId}/connect", http.HandlerFunc(ws.HandleWebSocketUpgradeRequest))
 	mux.Handle("GET /room/{roomId}", http.HandlerFunc(rh.GetRoom))
+	mux.Handle("GET /room", http.HandlerFunc(rh.ListRoomsForUser))
 	mux.Handle("POST /room", http.HandlerFunc(rh.CreateRoom))
 	mux.Handle("DELETE /room", http.HandlerFunc(rh.DeleteRoom))
 	mux.Handle("POST /room/{roomId}/users/add", http.HandlerFunc(rh.AddUsersToRoom))

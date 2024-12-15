@@ -33,6 +33,26 @@ func (repo *MongoChatRoomRepository) GetRoom(ctx context.Context, id string) (*s
 	return &room, nil
 }
 
+func (repo *MongoChatRoomRepository) GetUsersRooms(ctx context.Context, userId string) ([]structs.ChatRoomEntity, error) {
+	filter := bson.M{"users.userId": userId}
+	cursor, err := repo.collection.Find(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	var rooms []structs.ChatRoomEntity
+	for cursor.Next(ctx) {
+		var room structs.ChatRoomEntity
+		if err := cursor.Decode(&room); err != nil {
+			return nil, err
+		}
+		rooms = append(rooms, room)
+	}
+
+	return rooms, nil
+}
+
 // CreateRoom creates a new chat room in the MongoDB collection.
 func (repo *MongoChatRoomRepository) CreateRoom(ctx context.Context, name string) (*structs.ChatRoomEntity, error) {
 	newRoom := &structs.ChatRoomEntity{

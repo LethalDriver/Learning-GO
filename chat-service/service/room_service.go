@@ -20,6 +20,7 @@ type ChatRoomRepository interface {
 	GetUsersPermissions(ctx context.Context, roomId string, userId string) (*structs.UserPermissions, error)
 	ChangeUserRole(ctx context.Context, roomId string, userId string, role structs.Role) error
 	GetUnseenMessages(ctx context.Context, roomId, userId string) ([]structs.Message, error)
+	GetUsersRooms(ctx context.Context, userId string) ([]structs.ChatRoomEntity, error)
 }
 
 // ErrInsufficientPermissions is an error indicating that the user does not have sufficient permissions.
@@ -151,4 +152,19 @@ func (s *RoomService) validateAdminPrivileges(ctx context.Context, roomId, userI
 		return ErrInsufficientPermissions
 	}
 	return nil
+}
+
+func (s *RoomService) ListRoomsForUser(ctx context.Context, userId string) ([]structs.RoomDto, error) {
+	rooms, err := s.repo.GetUsersRooms(ctx, userId)
+	if err != nil {
+		return nil, err
+	}
+
+	roomDtos := make([]structs.RoomDto, 0, len(rooms))
+	for _, room := range rooms {
+		roomDto := MapRoomEntityToDto(&room)
+		roomDtos = append(roomDtos, *roomDto)
+	}
+
+	return roomDtos, nil
 }
