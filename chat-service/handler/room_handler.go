@@ -1,15 +1,17 @@
 package handler
 
 import (
+	"encoding/json"
 	"net/http"
+
+	"example.com/chat_app/chat_service/structs"
 
 	"example.com/chat_app/chat_service/service"
 )
 
 // RoomHandler handles room-related requests.
 type RoomHandler struct {
-	roomService  *service.RoomService
-	mediaService *service.MediaService
+	roomService *service.RoomService
 }
 
 // NewRoomHandler creates a new RoomHandler with the provided RoomService.
@@ -22,11 +24,19 @@ func NewRoomHandler(rs *service.RoomService) *RoomHandler {
 func (rh *RoomHandler) CreateRoom(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	userId := r.Header.Get("X-User-Id")
-	room, err := rh.roomService.CreateRoom(ctx, userId)
+
+	var req structs.RoomCreateDto
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	room, err := rh.roomService.CreateRoom(ctx, userId, req.Name)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
 	response := struct {
 		RoomId string `json:"roomId"`
 	}{
@@ -170,4 +180,3 @@ func (rh *RoomHandler) DeleteUserFromRoom(w http.ResponseWriter, r *http.Request
 	writeJsonResponse(w, response)
 	w.WriteHeader(http.StatusOK)
 }
-

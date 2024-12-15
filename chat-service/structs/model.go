@@ -29,6 +29,7 @@ type UserPermissions struct {
 
 type ChatRoomEntity struct {
 	Id       string            `bson:"id" json:"id"`
+	Name     string            `json:"name"`
 	Messages []Message         `bson:"messages" json:"messages"`
 	Users    []UserPermissions `bson:"users" json:"users"`
 }

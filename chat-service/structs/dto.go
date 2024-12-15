@@ -4,7 +4,12 @@ import "encoding/json"
 
 type RoomDto struct {
 	Id      string    `json:"id"`
+	Name    string    `json:"name"`
 	Members []UserDto `json:"members"`
+}
+
+type RoomCreateDto struct {
+	Name string `json:"name"`
 }
 
 type UserDto struct {

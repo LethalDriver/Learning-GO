@@ -34,9 +34,10 @@ func (repo *MongoChatRoomRepository) GetRoom(ctx context.Context, id string) (*s
 }
 
 // CreateRoom creates a new chat room in the MongoDB collection.
-func (repo *MongoChatRoomRepository) CreateRoom(ctx context.Context) (*structs.ChatRoomEntity, error) {
+func (repo *MongoChatRoomRepository) CreateRoom(ctx context.Context, name string) (*structs.ChatRoomEntity, error) {
 	newRoom := &structs.ChatRoomEntity{
 		Id:       uuid.NewString(),
+		Name:     name,
 		Messages: []structs.Message{},
 		Users:    []structs.UserPermissions{},
 	}
@@ -180,5 +181,5 @@ func (repo *MongoChatRoomRepository) GetUnseenMessages(ctx context.Context, room
 		messages = append(messages, message)
 	}
 
-	return messages, nil 
+	return messages, nil
 }

@@ -13,6 +13,7 @@ func MapRoomEntityToDto(room *structs.ChatRoomEntity) *structs.RoomDto {
 	return &structs.RoomDto{
 		Id:      room.Id,
 		Members: members,
+		Name:    room.Name,
 	}
 }
 

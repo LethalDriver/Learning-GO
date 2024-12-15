@@ -8,6 +8,20 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+type ChatRoomRepository interface {
+	CreateRoom(ctx context.Context, name string) (*structs.ChatRoomEntity, error)
+	GetRoom(ctx context.Context, id string) (*structs.ChatRoomEntity, error)
+	DeleteRoom(ctx context.Context, id string) error
+	AddMessageToRoom(ctx context.Context, roomId string, message *structs.Message) error
+	InsertSeenBy(ctx context.Context, roomId string, messageId string, userId string) error
+	DeleteMessage(ctx context.Context, roomId string, messageId string) error
+	InsertUserIntoRoom(ctx context.Context, roomId string, user structs.UserPermissions) error
+	DeleteUserFromRoom(ctx context.Context, roomId string, userId string) error
+	GetUsersPermissions(ctx context.Context, roomId string, userId string) (*structs.UserPermissions, error)
+	ChangeUserRole(ctx context.Context, roomId string, userId string, role structs.Role) error
+	GetUnseenMessages(ctx context.Context, roomId, userId string) ([]structs.Message, error)
+}
+
 // ErrInsufficientPermissions is an error indicating that the user does not have sufficient permissions.
 var ErrInsufficientPermissions = errors.New("insufficient permissions")
 
@@ -32,6 +46,19 @@ func (s *RoomService) GetRoomDto(ctx context.Context, roomId string, userId stri
 	}
 	roomDto := MapRoomEntityToDto(room)
 	return roomDto, nil
+}
+
+// CreateRoom creates a new chat room and adds the creating user as an admin.
+func (s *RoomService) CreateRoom(ctx context.Context, userId, name string) (*structs.ChatRoomEntity, error) {
+	room, err := s.repo.CreateRoom(ctx, name)
+	if err != nil {
+		return nil, err
+	}
+	err = s.AddAdminToRoom(ctx, room.Id, userId)
+	if err != nil {
+		return nil, err
+	}
+	return room, nil
 }
 
 // DeleteRoom deletes a chat room if the user has admin privileges.
@@ -100,19 +127,6 @@ func (s *RoomService) DemoteUser(ctx context.Context, roomId, demotingUserId, de
 		return err
 	}
 	return s.repo.ChangeUserRole(ctx, roomId, demotedUserId, structs.Member)
-}
-
-// CreateRoom creates a new chat room and adds the creating user as an admin.
-func (s *RoomService) CreateRoom(ctx context.Context, userId string) (*structs.ChatRoomEntity, error) {
-	room, err := s.repo.CreateRoom(ctx)
-	if err != nil {
-		return nil, err
-	}
-	err = s.AddAdminToRoom(ctx, room.Id, userId)
-	if err != nil {
-		return nil, err
-	}
-	return room, nil
 }
 
 // AddAdminToRoom adds an admin to a chat room.
