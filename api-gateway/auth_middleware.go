@@ -50,6 +50,33 @@ func JWTMiddleware(authService *AuthService, next http.Handler) http.Handler {
 	})
 }
 
+// JWTQueryMiddleware reads the JWT token from the query parameter, validates it, and appends the user ID to the X-User-Id header.
+func JWTQueryMiddleware(authService *AuthService, next http.Handler) http.Handler {
+    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        tokenString := r.URL.Query().Get("token")
+        if tokenString == "" {
+            http.Error(w, "Token query parameter missing", http.StatusUnauthorized)
+            return
+        }
+
+        claims, err := authService.ValidateTokenWithClaims(tokenString)
+        if err != nil {
+            http.Error(w, fmt.Sprintf("Invalid token: %v", err), http.StatusUnauthorized)
+            return
+        }
+
+        userId, ok := claims["userId"].(string)
+        if !ok {
+            http.Error(w, "Invalid token claims", http.StatusUnauthorized)
+            return
+        }
+
+        r.Header.Set("X-User-Id", userId)
+
+        next.ServeHTTP(w, r)
+    })
+}
+
 // ValidateTokenWithClaims validates the token and returns the claims if the token is valid.
 func (s *AuthService) ValidateTokenWithClaims(tokenString string) (jwt.MapClaims, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (any, error) {
