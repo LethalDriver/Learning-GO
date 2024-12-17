@@ -1,28 +1,35 @@
-from fastapi import FastAPI, HTTPException, Body
-from pydantic import BaseModel, Field
-from dotenv import load_dotenv
 from queries import summarize_chat_multishot_query
+
+from fastapi import FastAPI, HTTPException, Body
+import uvicorn
+from pydantic import BaseModel, Field
+
 import requests
+from dotenv import load_dotenv
 import os
+from typing import List, Dict
+
 
 app = FastAPI()
 
 load_dotenv()
 
-ollama_ngrok_url = os.getenv("OLLAMA_NGROK_URL")
-ollama_api_key = os.getenv("OLLAMA_API_KEY")
+
+OLLAMA_NGROK_URL = os.getenv("OLLAMA_NGROK_URL")
+OLLAMA_API_KEY = os.getenv("OLLAMA_API_KEY")
+PORT = int(os.getenv("PORT"))
 
 
 class SummarizeChatResponse(BaseModel):
     response: str = Field(..., example="The user asked for information about services.")
 
 
-def process_chat_input(chat_conversation: list[dict]) -> str:
+def process_chat_input(chat_conversation: List[Dict]) -> str:
     """
     Process chat input by concatenating messages from the conversation.
 
     Args:
-        chat_conversation (list[dict]): A list of dictionaries containing chat messages.
+        chat_conversation (List[Dict[str, str]]): A list of dictionaries containing chat messages.
 
     Returns:
         str: A concatenated string of chat messages.
@@ -35,7 +42,7 @@ def process_chat_input(chat_conversation: list[dict]) -> str:
 
 @app.post("/sumarize_chat", response_model=SummarizeChatResponse)
 def sumarize_chat(
-    input: dict[list[dict]] = Body(
+    input: Dict[str, List[Dict[str, str]]] = Body(
         ...,
         example={
             "messages": [
@@ -65,9 +72,9 @@ def sumarize_chat(
     processed_chat = process_chat_input(messages)
     query = summarize_chat_multishot_query(processed_chat)
     response = requests.post(
-        ollama_ngrok_url,
+        OLLAMA_NGROK_URL,
         json={"query": f"{query}"},
-        headers={"Authorization": f"Bearer {ollama_api_key}"},
+        headers={"Authorization": f"Bearer {OLLAMA_API_KEY}"},
     )
     if response.status_code == 200:
         return response.json()
@@ -83,3 +90,7 @@ def detect_emotions():
     This endpoint is not yet implemented.
     """
     pass
+
+
+if __name__ == "__main__":
+    uvicorn.run("main:app", host="0.0.0.0", port=PORT, reload=True)
