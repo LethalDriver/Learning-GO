@@ -9,7 +9,7 @@ app = FastAPI()
 
 load_dotenv()
 
-ollama_negrok_url = os.getenv("OLLAMA_NEGROK_URL")
+ollama_ngrok_url = os.getenv("OLLAMA_NGROK_URL")
 ollama_api_key = os.getenv("OLLAMA_API_KEY")
 
 class SummarizeChatResponse(BaseModel):
