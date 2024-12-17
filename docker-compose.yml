@@ -92,6 +92,23 @@ services:
         - action: rebuild
           path: ./media-service
 
+  ai-service:
+    build:
+      context: .
+      dockerfile: ./ai-service/Dockerfile
+    ports:
+      - "${AI_SERVICE_PORT}:${AI_SERVICE_PORT}"
+    environment:
+      - PORT=${AI_SERVICE_PORT}
+      - OLLAMA_NGROK_URL=${OLLAMA_NGROK_URL}
+      - OLLAMA_API_KEY=${OLLAMA_API_KEY}
+    networks:
+      - chat_app_network
+    develop:
+      watch:
+        - action: rebuild
+          path: ./ai-service
+
 networks:
   chat_app_network:
     driver: bridge
