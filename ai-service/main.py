@@ -12,8 +12,10 @@ load_dotenv()
 ollama_ngrok_url = os.getenv("OLLAMA_NGROK_URL")
 ollama_api_key = os.getenv("OLLAMA_API_KEY")
 
+
 class SummarizeChatResponse(BaseModel):
     response: str = Field(..., example="The user asked for information about services.")
+
 
 def process_chat_input(chat_conversation: list[dict]) -> str:
     """
@@ -27,18 +29,26 @@ def process_chat_input(chat_conversation: list[dict]) -> str:
     """
     processed_chat = ""
     for message in chat_conversation:
-        processed_chat += f"{message['sender']}: {message['message']}\n"
+        processed_chat += f"{message['sentBy']}: {message['content']}\n"
     return processed_chat
 
+
 @app.post("/sumarize_chat", response_model=SummarizeChatResponse)
-def sumarize_chat(input: list[dict] = Body(
-    ...,
-    example=[
-        {"sender": "user1", "message": "Hello!"},
-        {"sender": "user2", "message": "Hi there! How can I help you today?"},
-        {"sender": "user1", "message": "I need some information about your services."}
-    ]
-)):
+def sumarize_chat(
+    input: dict[list[dict]] = Body(
+        ...,
+        example={
+            "messages": [
+                {"sentBy": "user1", "content": "Hello!"},
+                {"sentBy": "user2", "content": "Hi there! How can I help you today?"},
+                {
+                    "sentBy": "user1",
+                    "content": "I need some information about your services.",
+                },
+            ]
+        },
+    )
+):
     """
     Summarize a chat conversation.
 
@@ -51,10 +61,11 @@ def sumarize_chat(input: list[dict] = Body(
     Raises:
         HTTPException: If the API request fails.
     """
-    processed_chat = process_chat_input(input)
+    messages = input["messages"]
+    processed_chat = process_chat_input(messages)
     query = summarize_chat_multishot_query(processed_chat)
     response = requests.post(
-        ollama_negrok_url,
+        ollama_ngrok_url,
         json={"query": f"{query}"},
         headers={"Authorization": f"Bearer {ollama_api_key}"},
     )
@@ -62,6 +73,7 @@ def sumarize_chat(input: list[dict] = Body(
         return response.json()
     else:
         raise HTTPException(status_code=response.status_code, detail=response.text)
+
 
 @app.post("/detect_emotions")
 def detect_emotions():
